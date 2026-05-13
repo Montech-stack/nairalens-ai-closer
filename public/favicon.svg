@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="nl-bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1a1306"/>
+      <stop offset="1" stop-color="#080808"/>
+    </linearGradient>
+    <linearGradient id="nl-mark" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F5D77A"/>
+      <stop offset="0.55" stop-color="#D4AF37"/>
+      <stop offset="1" stop-color="#A8821F"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="url(#nl-bg)" stroke="url(#nl-mark)" stroke-width="1.5"/>
+  <circle cx="32" cy="30" r="15" stroke="url(#nl-mark)" stroke-width="2.4" fill="none"/>
+  <path d="M25 38V22h2.4l9.2 11.4V22H39v16h-2.4l-9.2-11.4V38H25z" fill="url(#nl-mark)"/>
+  <line x1="22" y1="28" x2="42" y2="28" stroke="url(#nl-mark)" stroke-width="1.4"/>
+  <line x1="22" y1="32" x2="42" y2="32" stroke="url(#nl-mark)" stroke-width="1.4"/>
+  <line x1="43.5" y1="41.5" x2="52" y2="50" stroke="url(#nl-mark)" stroke-width="3" stroke-linecap="round"/>
+</svg>
