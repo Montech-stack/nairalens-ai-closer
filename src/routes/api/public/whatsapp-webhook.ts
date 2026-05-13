@@ -246,6 +246,9 @@ async function sendWhatsApp(
   to: string,
   body: string
 ) {
+  console.log(`[wa-send] Attempting to send message to ${to.slice(0, -4)}**** via Graph API.`);
+  console.log(`[wa-send] Using Access Token ending in: ...${accessToken.slice(-6)}`);
+
   const r = await fetch(
     `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`,
     {
@@ -263,7 +266,12 @@ async function sendWhatsApp(
     }
   );
   if (!r.ok) {
-    console.error("[wa-send] Failed:", r.status, await r.text());
+    const errorBody = await r.text();
+    console.error(`[wa-send] FAILED with status ${r.status}:`, errorBody);
+    // Throw an error to ensure the calling function knows it failed
+    throw new Error(`WhatsApp API Error: ${r.status} - ${errorBody}`);
+  } else {
+    console.log("[wa-send] Successfully sent message.");
   }
 }
 
