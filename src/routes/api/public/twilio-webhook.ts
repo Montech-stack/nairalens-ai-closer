@@ -222,9 +222,10 @@ export const Route = createFileRoute("/api/public/twilio-webhook")({
             .eq("business_phone", to)
             .maybeSingle();
 
-          console.log("[twilio] from:", from, "to:", to, "integ:", integ ? integ.user_id : "NOT FOUND");
-
-          if (!integ) return twiml("This number is not configured yet.");
+          if (!integ) {
+            console.error(`[twilio-webhook] No integration found for 'To' number: ${to}`);
+            return twiml("This number is not configured yet.");
+          }
 
           const { data: profile } = await supabaseAdmin
             .from("profiles").select("*").eq("user_id", integ.user_id).maybeSingle();
@@ -240,7 +241,7 @@ export const Route = createFileRoute("/api/public/twilio-webhook")({
             const { data: created } = await supabaseAdmin
               .from("leads").insert({
                 user_id: integ.user_id, name: `WA ${from.slice(-4)}`, phone: from,
-                source: "WhatsApp", stage: "warm", intent_score: 50,
+                source: "WhatsApp (Twilio)", stage: "warm", intent_score: 50,
                 last_touch_at: new Date().toISOString(),
               }).select().single();
             lead = created;
@@ -288,14 +289,13 @@ export const Route = createFileRoute("/api/public/twilio-webhook")({
             message_text: reply, annotation: "↳ AI auto-reply (Twilio sandbox)",
           });
 
-
           await supabaseAdmin.from("whatsapp_integrations")
             .update({ last_event_at: new Date().toISOString(), status: "connected" })
             .eq("id", integ.id);
 
           return twiml(reply);
         } catch (e: any) {
-          console.error("[twilio-webhook]", e?.message);
+          console.error("[twilio-webhook] Full handler error:", e.message);
           return twiml("Our AI is warming up — please try again in a moment.");
         }
       },
