@@ -374,12 +374,15 @@ export default async function handler(request: Request): Promise<Response> {
             `/conversations?lead_id=eq.${lead.id}&select=role,message_text&order=created_at.asc&limit=20`
           );
 
+          const userModel = profile?.ai_model || "groq/llama-3.3-70b-versatile";
+          const finalModel = userModel.includes("gemini") ? "groq/llama-3.3-70b-versatile" : userModel;
+
           let reply = "";
           try {
             reply = await generateAIReply({
               geminiKey,
               groqKey,
-              model: profile?.ai_model || "gemini-2.5-flash",
+              model: finalModel,
               persona: profile?.persona || "apex_closer",
               language: profile?.language || "english_ng",
               history: Array.isArray(history) ? history : [],
