@@ -6,11 +6,14 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 // ─────────────────────────────────────────────
 async function sendTypingIndicator(
   from: string,
+  to: string,
   accountSid: string,
   authToken: string
 ): Promise<boolean> {
   try {
     const auth = btoa(`${accountSid}:${authToken}`);
+    
+    // Twilio API endpoint for creating a typing indicator
     const res = await fetch(
       `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
       {
@@ -21,18 +24,19 @@ async function sendTypingIndicator(
         },
         body: new URLSearchParams({
           To: `whatsapp:${from}`,
-          From: "whatsapp:+1415",
-          Body: " ",
+          From: `whatsapp:${to}`,
+          Body: "", // Empty body for typing indicator
         }).toString(),
       }
     );
     
     if (!res.ok) {
-      console.warn(`[typing-indicator] Failed: ${res.status}`);
+      const errText = await res.text();
+      console.warn(`[typing-indicator] Failed ${res.status}: ${errText.slice(0, 100)}`);
       return false;
     }
     
-    console.log("[typing-indicator] Sent successfully");
+    console.log("[typing-indicator] Sent to:", from);
     return true;
   } catch (e: any) {
     console.warn(`[typing-indicator] Error: ${e.message}`);
@@ -265,7 +269,7 @@ export const Route = createFileRoute("/api/public/twilio-webhook")({
         
         // ── Send typing indicator if credentials available ──────────
         if (twilioAccountSid && twilioAuthToken) {
-          sendTypingIndicator(from, twilioAccountSid, twilioAuthToken).catch(() => {});
+          sendTypingIndicator(from, to, twilioAccountSid, twilioAuthToken).catch(() => {});
         }
 
         try {
