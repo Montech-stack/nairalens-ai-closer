@@ -331,6 +331,21 @@ ABSOLUTE RULES
 `;
 
 // ─────────────────────────────────────────────────────────────────
+// GREETING DETECTION HELPER (shared across functions)
+// ─────────────────────────────────────────────────────────────────
+const GREETING_WORDS = [
+  "hello", "hi", "hey", "good morning", "good afternoon",
+  "good evening", "start", "helo", "holla", "yo", "sup",
+];
+
+function isGreetingMessage(msg: string): boolean {
+  const lower = msg.toLowerCase().trim();
+  return GREETING_WORDS.some(
+    (g) => lower === g || lower.startsWith(g + " ")
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
 // BUYING SIGNAL DETECTOR
 // ─────────────────────────────────────────────────────────────────
 function detectBuyingSignal(
@@ -394,40 +409,52 @@ function detectBuyingSignal(
 }
 
 // ─────────────────────────────────────────────────────────────────
-// BUDGET NUMBER EXTRACTOR
+// FIX 3 — HARDENED BUDGET NUMBER EXTRACTOR
+// Only reads lead messages. Only falls back to bare numbers when
+// the immediately preceding AI message asked for the budget.
 // ─────────────────────────────────────────────────────────────────
 function extractBudgetNumber(
   history: { role: string; message_text: string }[],
   latestMsg: string
 ): number {
-  const allText = [...history.map((h) => h.message_text), latestMsg].join(" ");
+  // Only scan LEAD/USER messages — AI messages contain property prices
+  // and deposit amounts that must never be mistaken for the lead's budget.
+  const leadMessagesOnly = [
+    ...history
+      .filter((h) => h.role === "lead" || h.role === "user")
+      .map((h) => h.message_text),
+    latestMsg,
+  ].join(" ");
 
   const patterns = [
-    /₦\s*([\d,]+)\s*(?:m(?:illion)?)?/i,
+    /₦\s*([\d,]+(?:\.\d+)?)\s*(?:m(?:illion)?)?/i,
     /\b(\d+(?:\.\d+)?)\s*m(?:illion)?\b/i,
     /\b(\d+(?:\.\d+)?)\s*million\b/i,
   ];
 
   for (const p of patterns) {
-    const match = allText.match(p);
+    const match = leadMessagesOnly.match(p);
     if (match) {
       const raw = parseFloat(match[1].replace(/,/g, ""));
-      // If small number (1–9999), treat as millions
       return raw < 10_000 ? raw * 1_000_000 : raw;
     }
   }
 
-  // Fallback: find any standalone number after AI asked for budget
-  const aiAskedBudget = history.some(
-    (h) =>
-      h.role === "ai" &&
-      /budget|range|working with|how much|what range/.test(
-        h.message_text.toLowerCase()
-      )
-  );
+  // Fallback: bare number ONLY if the IMMEDIATELY preceding AI message
+  // asked for budget — not any AI message ever.
+  const lastAiMessage = [...history]
+    .reverse()
+    .find((h) => h.role === "ai");
 
-  if (aiAskedBudget) {
-    const numMatch = allText.match(/\b([1-9]\d{0,3})\b/);
+  const lastAiAskedBudget =
+    lastAiMessage &&
+    /budget|range|working with|how much|what range/.test(
+      lastAiMessage.message_text.toLowerCase()
+    );
+
+  if (lastAiAskedBudget) {
+    // Accept ONLY a bare 1–4 digit number from the latest lead message
+    const numMatch = latestMsg.trim().match(/^(\d{1,4})$/);
     if (numMatch) {
       return parseFloat(numMatch[1]) * 1_000_000;
     }
@@ -483,7 +510,7 @@ function extractKnowledge(
   const aiAskedForBudget =
     /budget|range|working with|how much|what range/.test(aiMessages);
   const leadHasAnyNumber = /\b[1-9]\d{0,3}\b/.test(leadMessages);
-  const hasBudgetInText = budgetRegexes.some((r) => r.test(allText));
+  const hasBudgetInText = budgetRegexes.some((r) => r.test(leadMessages)); // FIX: scan leadMessages only, not allText
   const hasBudget = hasBudgetInText || (aiAskedForBudget && leadHasAnyNumber);
 
   const budgetConfirmedByAI =
@@ -515,7 +542,7 @@ function extractKnowledge(
     /\b(land)\b/i,
   ];
 
-  const hasPurpose = purposeRegexes.some((r) => r.test(allText));
+  const hasPurpose = purposeRegexes.some((r) => r.test(leadMessages)); // FIX: scan leadMessages only
   const purposeConfirmedByAI =
     /looking to flip|investment|personal home|develop|you want to|buy and flip|buy.*flip/.test(
       aiMessages
@@ -559,7 +586,7 @@ function extractKnowledge(
 }
 
 // ─────────────────────────────────────────────────────────────────
-// STAGE DETECTOR — deposit-first doctrine
+// FIX 2 — STAGE DETECTOR with greeting hard-guard
 // ─────────────────────────────────────────────────────────────────
 function detectStage(
   history: { role: string; message_text: string }[],
@@ -578,6 +605,18 @@ function detectStage(
 
   const budgetKnown = k.hasBudget || k.budgetConfirmedByAI;
   const purposeKnown = k.hasPurpose || k.purposeConfirmedByAI;
+
+  // ── FIX 2: GREETING HARD-GUARD ────────────────────────────────
+  // A greeting on a fresh or near-fresh session always resets to Stage 1.
+  // No property, no price, no budget assumption — regardless of history.
+  if (isGreetingMessage(latestMsg) && msgCount <= 2) {
+    return `STAGE 1 — FIRST CONTACT: The lead sent a greeting. This is a fresh conversation.
+Welcome them warmly using the company name.
+Say ONE sentence about what you help buyers achieve.
+Ask ONE question only: are they looking for a personal home, an investment to flip or hold, or land to develop?
+DO NOT mention any property. DO NOT mention any price. DO NOT ask about budget.
+DO NOT reference any previous conversation context — treat this as a fresh start.`;
+  }
 
   // ── DEPOSIT CONFIRMED ─────────────────────────────────────────
   if (k.depositConfirmed || signal === "deposit_confirmed") {
@@ -782,7 +821,6 @@ function calculateIntentScore(
   );
   if (negCount > 0) score -= negCount * 12;
 
-  // Bonus for deposit confirmation
   if (
     allText.includes("paid") ||
     allText.includes("transferred") ||
@@ -893,7 +931,11 @@ Collect their details and keep them warm.`;
 7. Does my message end with either a deposit ask or a clear single next step toward one?
 8. Have I included the specific deposit AMOUNT in my close? If not → add it.
 9. Is there a budget mismatch? If yes → am I bridging, not apologising?
-10. Would a top closer be proud of this message? If not — rewrite it.`,
+10. Would a top closer be proud of this message? If not — rewrite it.
+11. Did the lead's OWN messages explicitly state this budget figure this session?
+    If the only source is a previous AI message or a property price — budget is NOT known. Ask for it.
+12. Is this the lead's first message or a greeting? If yes — welcome them and ask about
+    their purpose ONLY. No property. No price. No deposit. No exceptions.`,
   ]
     .filter(Boolean)
     .join("\n\n");
@@ -1276,13 +1318,47 @@ export default async function handler(request: Request): Promise<Response> {
     // ── Respect manual override / AI paused flag ──────────────
     if (lead.ai_paused) return new Response("", { status: 200 });
 
-    // ── Fetch conversation history ────────────────────────────
+    // ── Fetch full conversation history ───────────────────────
     const historyRows = await sbFetch(
       supabaseUrl,
       serviceKey,
-      `/conversations?lead_id=eq.${lead.id}&select=role,message_text&order=created_at.asc&limit=20`
+      `/conversations?lead_id=eq.${lead.id}&select=role,message_text,created_at&order=created_at.asc&limit=20`
     );
-    const history = Array.isArray(historyRows) ? historyRows : [];
+    const history: { role: string; message_text: string; created_at?: string }[] =
+      Array.isArray(historyRows) ? historyRows : [];
+
+    // ── FIX 1: SESSION RESET — treat greeting after gap as fresh start ──
+    // If the lead sends a greeting and their last AI interaction was
+    // more than 6 hours ago, pass an empty history to the AI.
+    // This prevents stale budget/purpose data from polluting a new session.
+    const FRESH_START_TRIGGERS = [
+      "hello", "hi", "hey", "good morning", "good afternoon",
+      "good evening", "start", "helo", "holla", "yo", "sup",
+    ];
+    const isGreeting = FRESH_START_TRIGGERS.some(
+      (t) =>
+        body.toLowerCase().trim() === t ||
+        body.toLowerCase().trim().startsWith(t + " ")
+    );
+
+    const lastAiEntry = [...history].reverse().find((h) => h.role === "ai");
+    const lastAiTime = lastAiEntry?.created_at
+      ? new Date(lastAiEntry.created_at).getTime()
+      : 0;
+    const hoursSinceLastContact =
+      lastAiTime > 0 ? (Date.now() - lastAiTime) / (1000 * 60 * 60) : 999;
+
+    const isFreshSession = isGreeting && hoursSinceLastContact > 6;
+
+    // Pass a clean slate to the AI if this is a fresh session.
+    // The full history is still written to the DB for the human agent's reference.
+    const historyForAI = isFreshSession ? [] : history;
+
+    if (isFreshSession) {
+      console.log(
+        `[session-reset] Greeting detected after ${hoursSinceLastContact.toFixed(1)}h gap — resetting AI context for lead ${lead.id}`
+      );
+    }
 
     // ── Generate AI reply ─────────────────────────────────────
     const reply = await generateAIReply({
@@ -1291,7 +1367,7 @@ export default async function handler(request: Request): Promise<Response> {
       model: profile?.ai_model || "groq/llama-3.3-70b-versatile",
       persona: profile?.persona || "apex_closer",
       language: profile?.language || "english_ng",
-      history,
+      history: historyForAI,
       userMsg: body,
       marketTags,
       companyName: profile?.company_name || "our company",
@@ -1329,6 +1405,7 @@ export default async function handler(request: Request): Promise<Response> {
     );
 
     // ── Save AI reply to conversations ────────────────────────
+    const knowledgeForAnnotation = extractKnowledge(historyForAI, body);
     await sbFetch(supabaseUrl, serviceKey, `/conversations`, {
       method: "POST",
       headers: { Prefer: "return=minimal" },
@@ -1337,7 +1414,7 @@ export default async function handler(request: Request): Promise<Response> {
         lead_id: lead.id,
         role: "ai",
         message_text: reply,
-        annotation: `↳ Stage detected | Signal: ${signal} | Intent: ${newIntentScore} | Close attempts: ${extractKnowledge(history, body).closeAttempts}`,
+        annotation: `↳ Stage detected | Signal: ${signal} | Intent: ${newIntentScore} | Close attempts: ${knowledgeForAnnotation.closeAttempts}${isFreshSession ? " | SESSION RESET (greeting after gap)" : ""}`,
       }),
     });
 
