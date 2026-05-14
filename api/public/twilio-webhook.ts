@@ -2,6 +2,8 @@ export const config = { runtime: "edge" };
 
 // ─────────────────────────────────────────────────────────────────
 // TYPING INDICATOR HELPER
+// Twilio WhatsApp may handle typing indicators automatically based on
+// message latency. If manual trigger is needed, use this function.
 // ─────────────────────────────────────────────────────────────────
 async function sendTypingIndicator(
   from: string,
@@ -10,33 +12,12 @@ async function sendTypingIndicator(
   authToken: string
 ): Promise<boolean> {
   try {
-    const auth = btoa(`${accountSid}:${authToken}`);
-    
-    // Twilio API endpoint for creating a typing indicator
-    // This uses the Messages API with a 0-character body to trigger typing
-    const res = await fetch(
-      `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Basic ${auth}`,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          To: `whatsapp:${from}`,
-          From: `whatsapp:${to}`,
-          Body: "", // Empty body - Twilio interprets this as typing indicator
-        }).toString(),
-      }
-    );
-    
-    if (!res.ok) {
-      const errText = await res.text();
-      console.warn(`[typing-indicator] Failed ${res.status}: ${errText.slice(0, 100)}`);
-      return false;
-    }
-    
-    console.log("[typing-indicator] Sent to:", from);
+    // For Twilio WhatsApp Sandbox, typing indicators may be automatic.
+    // If you need explicit control, use the Messaging Services API with:
+    // - MessagingServiceSid
+    // - Content templates
+    // For now, logging only - Twilio may handle this natively.
+    console.log("[typing-indicator] Queue message processing for:", from);
     return true;
   } catch (e: any) {
     console.warn(`[typing-indicator] Error: ${e.message}`);
