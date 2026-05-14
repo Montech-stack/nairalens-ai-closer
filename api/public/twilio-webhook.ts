@@ -172,62 +172,90 @@ async function generateAIReply(opts: {
     { role: "user", content: opts.userMsg },
   ];
 
-  // Determine which API to use based on model
-  const isGroqModel = model.includes("llama") || model.startsWith("mixtral");
-  const shouldTryGroqFirst = isGroqModel && opts.groqKey;
+  const isGroqModel =
+    model.includes("llama") ||
+    model.startsWith("mixtral") ||
+    model.startsWith("gemma") ||
+    model.startsWith("deepseek");
 
-  // Try primary model first, then fallback
-  if (shouldTryGroqFirst) {
+  const errors: string[] = [];
+
+  // Try Groq if we have a key (either as primary, or as fallback for a Gemini choice)
+  const tryGroq = async (groqModel: string): Promise<string | null> => {
+    if (!opts.groqKey) {
+      errors.push("groq: no GROQ_API_KEY set");
+      return null;
+    }
+    try {
+      const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${opts.groqKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ model: groqModel, messages, temperature: 0.7, max_tokens: 500 }),
+      });
+      if (!r.ok) {
+        const t = await r.text();
+        errors.push(`groq ${r.status}: ${t.slice(0, 200)}`);
+        return null;
+      }
+      const data = await r.json();
+      return data.choices?.[0]?.message?.content?.trim() || null;
+    } catch (e: any) {
+      errors.push(`groq exception: ${e?.message ?? e}`);
+      return null;
+    }
+  };
+
+  const tryGemini = async (geminiModel: string): Promise<string | null> => {
+    if (!opts.geminiKey) {
+      errors.push("gemini: no GEMINI_API_KEY set");
+      return null;
+    }
     try {
       const r = await fetch(
-        "https://api.groq.com/openai/v1/chat/completions",
+        "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
         {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${opts.groqKey}`,
+            Authorization: `Bearer ${opts.geminiKey}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ 
-            model, 
-            messages,
-            temperature: 0.7,
-            max_tokens: 500,
-          }),
+          body: JSON.stringify({ model: geminiModel, messages, temperature: 0.7, max_tokens: 500 }),
         }
       );
-      if (r.ok) {
-        const data = await r.json();
-        const reply = data.choices?.[0]?.message?.content?.trim();
-        if (reply) return reply;
+      if (!r.ok) {
+        const t = await r.text();
+        errors.push(`gemini ${r.status}: ${t.slice(0, 200)}`);
+        return null;
       }
-      console.warn(`[groq-fallback] Model ${model} failed, falling back to Gemini`);
+      const data = await r.json();
+      return data.choices?.[0]?.message?.content?.trim() || null;
     } catch (e: any) {
-      console.warn(`[groq-fallback] Groq error: ${e.message}, falling back to Gemini`);
+      errors.push(`gemini exception: ${e?.message ?? e}`);
+      return null;
     }
+  };
+
+  const groqFallbackModel = "llama-3.3-70b-versatile";
+  const geminiFallbackModel = "gemini-2.5-flash";
+
+  let reply: string | null = null;
+  if (isGroqModel) {
+    reply = await tryGroq(model);
+    if (!reply) reply = await tryGroq(groqFallbackModel);
+    if (!reply) reply = await tryGemini(geminiFallbackModel);
+  } else {
+    reply = await tryGemini(model);
+    if (!reply) reply = await tryGroq(groqFallbackModel);
   }
 
-  // Fallback to Gemini
-  const geminiModel = model.startsWith("llama") || model.startsWith("mixtral") 
-    ? "gemini-2.5-flash"
-    : model;
-    
-  const r = await fetch(
-    "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${opts.geminiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ model: geminiModel, messages }),
-    }
-  );
-  if (!r.ok) throw new Error(`Gemini ${r.status}: ${await r.text()}`);
-  const data = await r.json();
-  return (
-    data.choices?.[0]?.message?.content?.trim() ||
-    "Thank you for your message. I'll confirm the details and get back to you shortly."
-  );
+  if (!reply) {
+    console.error("[ai] all providers failed:", errors.join(" | "));
+    throw new Error(`AI providers failed: ${errors.join(" | ")}`);
+  }
+  return reply;
 }
 
 export default async function handler(request: Request): Promise<Response> {
