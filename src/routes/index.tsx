@@ -1,8 +1,21 @@
 ﻿import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, useRef, useCallback } from "react";
 import {
-  Zap, MessageCircle, Brain, TrendingUp, Eye, Hand, Trophy,
-  CheckCircle2, ArrowRight, Activity, Clock, Target, Banknote, Menu, X,
+  Zap,
+  MessageCircle,
+  Brain,
+  TrendingUp,
+  Eye,
+  Hand,
+  Trophy,
+  CheckCircle2,
+  ArrowRight,
+  Activity,
+  Clock,
+  Target,
+  Banknote,
+  Menu,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
@@ -11,9 +24,16 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "NairaLens — Nigeria's AI Real Estate Sales Engine" },
-      { name: "description", content: "NairaLens closes WhatsApp deals 24/7 for Nigerian real estate — qualifying leads, handling objections, and driving revenue while you sleep." },
+      {
+        name: "description",
+        content:
+          "NairaLens closes WhatsApp deals 24/7 for Nigerian real estate — qualifying leads, handling objections, and driving revenue while you sleep.",
+      },
       { property: "og:title", content: "NairaLens — Nigeria's AI Real Estate Sales Engine" },
-      { property: "og:description", content: "The AI sales engine built for Nigerian real estate." },
+      {
+        property: "og:description",
+        content: "The AI sales engine built for Nigerian real estate.",
+      },
     ],
   }),
   component: Landing,
@@ -22,10 +42,10 @@ export const Route = createFileRoute("/")({
 // ─── Custom cursor — lusion-style lagging ring ────────────────────────────────
 
 function CustomCursor() {
-  const dot  = useRef<HTMLDivElement>(null);
+  const dot = useRef<HTMLDivElement>(null);
   const ring = useRef<HTMLDivElement>(null);
   const mouse = useRef({ x: -300, y: -300 });
-  const lag   = useRef({ x: -300, y: -300 });
+  const lag = useRef({ x: -300, y: -300 });
   const [show, setShow] = useState(false);
 
   useEffect(() => {
@@ -33,8 +53,7 @@ function CustomCursor() {
     setShow(true);
     const move = (e: MouseEvent) => {
       mouse.current = { x: e.clientX, y: e.clientY };
-      if (dot.current)
-        dot.current.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+      if (dot.current) dot.current.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
     };
     window.addEventListener("mousemove", move, { passive: true });
     const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -47,14 +66,25 @@ function CustomCursor() {
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
-    return () => { window.removeEventListener("mousemove", move); cancelAnimationFrame(raf); };
+    return () => {
+      window.removeEventListener("mousemove", move);
+      cancelAnimationFrame(raf);
+    };
   }, []);
 
   if (!show) return null;
   return (
     <>
-      <div ref={dot}  className="fixed top-0 left-0 pointer-events-none z-[9999] -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-gold mix-blend-difference" style={{ willChange: "transform" }} />
-      <div ref={ring} className="fixed top-0 left-0 pointer-events-none z-[9998] -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full border border-gold/50" style={{ willChange: "transform" }} />
+      <div
+        ref={dot}
+        className="fixed top-0 left-0 pointer-events-none z-[9999] -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-gold mix-blend-difference"
+        style={{ willChange: "transform" }}
+      />
+      <div
+        ref={ring}
+        className="fixed top-0 left-0 pointer-events-none z-[9998] -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full border border-gold/50"
+        style={{ willChange: "transform" }}
+      />
     </>
   );
 }
@@ -101,8 +131,13 @@ function useInView(threshold = 0.12) {
     const el = ref.current;
     if (!el) return;
     const io = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { setVisible(true); io.disconnect(); } },
-      { threshold }
+      ([e]) => {
+        if (e.isIntersecting) {
+          setVisible(true);
+          io.disconnect();
+        }
+      },
+      { threshold },
     );
     io.observe(el);
     return () => io.disconnect();
@@ -111,15 +146,23 @@ function useInView(threshold = 0.12) {
 }
 
 const HIDDEN: Record<string, React.CSSProperties> = {
-  up:    { opacity: 0, transform: "translateY(36px)" },
-  left:  { opacity: 0, transform: "translateX(-40px)" },
+  up: { opacity: 0, transform: "translateY(36px)" },
+  left: { opacity: 0, transform: "translateX(-40px)" },
   right: { opacity: 0, transform: "translateX(40px)" },
   scale: { opacity: 0, transform: "scale(0.92)" },
-  fade:  { opacity: 0 },
+  fade: { opacity: 0 },
 };
 
-function Reveal({ children, delay = 0, dir = "up", className = "" }: {
-  children: React.ReactNode; delay?: number; dir?: keyof typeof HIDDEN; className?: string;
+function Reveal({
+  children,
+  delay = 0,
+  dir = "up",
+  className = "",
+}: {
+  children: React.ReactNode;
+  delay?: number;
+  dir?: keyof typeof HIDDEN;
+  className?: string;
 }) {
   const { ref, visible } = useInView();
   return (
@@ -145,7 +188,9 @@ function RevealHeading({ lines, className = "" }: { lines: string[]; className?:
       <h2 className={className}>
         {lines.map((line, i) => (
           <span key={i} className="block">
-            <Mask visible={visible} delay={i * 100}>{line}</Mask>
+            <Mask visible={visible} delay={i * 100}>
+              {line}
+            </Mask>
           </span>
         ))}
       </h2>
@@ -160,21 +205,26 @@ function Magnetic({ children }: { children: React.ReactNode }) {
   const onMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const r = ref.current?.getBoundingClientRect();
     if (!r) return;
-    const x = (e.clientX - r.left - r.width / 2)  * 0.28;
-    const y = (e.clientY - r.top  - r.height / 2) * 0.28;
+    const x = (e.clientX - r.left - r.width / 2) * 0.28;
+    const y = (e.clientY - r.top - r.height / 2) * 0.28;
     if (ref.current) {
       ref.current.style.transition = "transform 0.15s ease";
-      ref.current.style.transform  = `translate(${x}px, ${y}px)`;
+      ref.current.style.transform = `translate(${x}px, ${y}px)`;
     }
   }, []);
   const onLeave = useCallback(() => {
     if (ref.current) {
       ref.current.style.transition = "transform 0.5s cubic-bezier(0.16,1,0.3,1)";
-      ref.current.style.transform  = "translate(0,0)";
+      ref.current.style.transform = "translate(0,0)";
     }
   }, []);
   return (
-    <div ref={ref} onMouseMove={onMove} onMouseLeave={onLeave} style={{ display: "inline-block", willChange: "transform" }}>
+    <div
+      ref={ref}
+      onMouseMove={onMove}
+      onMouseLeave={onLeave}
+      style={{ display: "inline-block", willChange: "transform" }}
+    >
       {children}
     </div>
   );
@@ -182,15 +232,23 @@ function Magnetic({ children }: { children: React.ReactNode }) {
 
 // ─── Spotlight card ───────────────────────────────────────────────────────────
 
-function SpotlightCard({ icon: Icon, title, desc }: { icon: React.ElementType; title: string; desc: string }) {
+function SpotlightCard({
+  icon: Icon,
+  title,
+  desc,
+}: {
+  icon: React.ElementType;
+  title: string;
+  desc: string;
+}) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [spot, setSpot] = useState({ x: 0, y: 0, active: false });
-  const onMove  = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+  const onMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const r = cardRef.current?.getBoundingClientRect();
     if (!r) return;
     setSpot({ x: e.clientX - r.left, y: e.clientY - r.top, active: true });
   }, []);
-  const onLeave = useCallback(() => setSpot(s => ({ ...s, active: false })), []);
+  const onLeave = useCallback(() => setSpot((s) => ({ ...s, active: false })), []);
   return (
     <div
       ref={cardRef}
@@ -208,7 +266,7 @@ function SpotlightCard({ icon: Icon, title, desc }: { icon: React.ElementType; t
       />
       <Icon className="relative w-8 h-8 text-gold mb-4 group-hover:scale-110 transition-transform duration-300" />
       <h3 className="relative font-serif text-xl mb-2">{title}</h3>
-      <p  className="relative text-sm text-muted-foreground">{desc}</p>
+      <p className="relative text-sm text-muted-foreground">{desc}</p>
     </div>
   );
 }
@@ -245,31 +303,81 @@ function Nav() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         <Logo size="md" />
         <nav className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
-          <a href="#vs-human" className="hover:text-gold transition-colors duration-200">vs. Humans</a>
-          <a href="#how"      className="hover:text-gold transition-colors duration-200">How it works</a>
-          <a href="#whatsapp" className="hover:text-gold transition-colors duration-200">WhatsApp</a>
-          <a href="#features" className="hover:text-gold transition-colors duration-200">Features</a>
+          <a href="#vs-human" className="hover:text-gold transition-colors duration-200">
+            vs. Humans
+          </a>
+          <a href="#how" className="hover:text-gold transition-colors duration-200">
+            How it works
+          </a>
+          <a href="#whatsapp" className="hover:text-gold transition-colors duration-200">
+            WhatsApp
+          </a>
+          <a href="#features" className="hover:text-gold transition-colors duration-200">
+            Features
+          </a>
         </nav>
         <div className="hidden md:flex items-center gap-3">
-          <Link to="/auth" className="text-sm text-muted-foreground hover:text-gold transition-colors duration-200">Sign in</Link>
+          <Link
+            to="/auth"
+            className="text-sm text-muted-foreground hover:text-gold transition-colors duration-200"
+          >
+            Sign in
+          </Link>
           <Link to="/onboarding">
-            <Button className="bg-gold text-noir hover:bg-gold/90 font-semibold">Start Free Trial</Button>
+            <Button className="bg-gold text-noir hover:bg-gold/90 font-semibold">
+              Start Free Trial
+            </Button>
           </Link>
         </div>
-        <button className="md:hidden text-gold" onClick={() => setOpen(o => !o)} aria-label="Menu">
+        <button
+          className="md:hidden text-gold"
+          onClick={() => setOpen((o) => !o)}
+          aria-label="Menu"
+        >
           {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
       </div>
       {open && (
         <div className="md:hidden border-t border-border bg-noir/95 backdrop-blur-xl px-6 py-4 space-y-3">
-          <a href="#vs-human" onClick={() => setOpen(false)} className="block text-sm text-muted-foreground">vs. Humans</a>
-          <a href="#how"      onClick={() => setOpen(false)} className="block text-sm text-muted-foreground">How it works</a>
-          <a href="#whatsapp" onClick={() => setOpen(false)} className="block text-sm text-muted-foreground">WhatsApp</a>
-          <a href="#features" onClick={() => setOpen(false)} className="block text-sm text-muted-foreground">Features</a>
+          <a
+            href="#vs-human"
+            onClick={() => setOpen(false)}
+            className="block text-sm text-muted-foreground"
+          >
+            vs. Humans
+          </a>
+          <a
+            href="#how"
+            onClick={() => setOpen(false)}
+            className="block text-sm text-muted-foreground"
+          >
+            How it works
+          </a>
+          <a
+            href="#whatsapp"
+            onClick={() => setOpen(false)}
+            className="block text-sm text-muted-foreground"
+          >
+            WhatsApp
+          </a>
+          <a
+            href="#features"
+            onClick={() => setOpen(false)}
+            className="block text-sm text-muted-foreground"
+          >
+            Features
+          </a>
           <div className="pt-3 border-t border-border flex gap-3">
-            <Link to="/auth" className="flex-1 text-center py-2 text-sm border border-border rounded-md">Sign in</Link>
+            <Link
+              to="/auth"
+              className="flex-1 text-center py-2 text-sm border border-border rounded-md"
+            >
+              Sign in
+            </Link>
             <Link to="/onboarding" className="flex-1">
-              <Button className="w-full bg-gold text-noir hover:bg-gold/90 font-semibold">Start Trial</Button>
+              <Button className="w-full bg-gold text-noir hover:bg-gold/90 font-semibold">
+                Start Trial
+              </Button>
             </Link>
           </div>
         </div>
@@ -283,23 +391,32 @@ function Nav() {
 function FloatingOrbs() {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
-      <div className="orb-drift-1 absolute w-[560px] h-[560px] rounded-full bg-gold/[0.05] blur-[110px]" style={{ top: "-18%", left: "-10%" }} />
-      <div className="orb-drift-2 absolute w-[400px] h-[400px] rounded-full bg-gold/[0.07] blur-[90px]"  style={{ bottom: "-12%", right: "-6%" }} />
-      <div className="orb-drift-3 absolute w-[240px] h-[240px] rounded-full bg-gold/[0.04] blur-[70px]"  style={{ top: "38%", left: "54%" }} />
+      <div
+        className="orb-drift-1 absolute w-[560px] h-[560px] rounded-full bg-gold/[0.05] blur-[110px]"
+        style={{ top: "-18%", left: "-10%" }}
+      />
+      <div
+        className="orb-drift-2 absolute w-[400px] h-[400px] rounded-full bg-gold/[0.07] blur-[90px]"
+        style={{ bottom: "-12%", right: "-6%" }}
+      />
+      <div
+        className="orb-drift-3 absolute w-[240px] h-[240px] rounded-full bg-gold/[0.04] blur-[70px]"
+        style={{ top: "38%", left: "54%" }}
+      />
     </div>
   );
 }
 
 // Word-level data for the headline — each word gets its own Mask reveal
 const HEADLINE_WORDS: { text: string; gold: boolean }[] = [
-  { text: "The",      gold: false },
-  { text: "#1",       gold: true  },
+  { text: "The", gold: false },
+  { text: "#1", gold: true },
   { text: "Nigerian", gold: false },
-  { text: "Real",     gold: true  },
-  { text: "Estate",   gold: true  },
-  { text: "Sales",    gold: true  },
-  { text: "Expert",   gold: true  },
-  { text: "Engine",   gold: false },
+  { text: "Real", gold: true },
+  { text: "Estate", gold: true },
+  { text: "Sales", gold: true },
+  { text: "Expert", gold: true },
+  { text: "Engine", gold: false },
 ];
 
 function Hero() {
@@ -317,17 +434,17 @@ function Hero() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full relative z-10">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-
           {/* ── Text column ── */}
           <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
-
             {/* Badge */}
             <div
               className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass text-[10px] sm:text-xs font-mono text-gold mb-6 sm:mb-8 max-w-full"
               style={{ opacity: ready ? 1 : 0, transition: "opacity 0.6s ease 0ms" }}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-success pulse-gold shrink-0" />
-              <span className="hidden sm:inline truncate">AI-POWERED REAL ESTATE SALES FOR NIGERIA</span>
+              <span className="hidden sm:inline truncate">
+                AI-POWERED REAL ESTATE SALES FOR NIGERIA
+              </span>
               <span className="sm:hidden">AI REAL ESTATE SALES · NIGERIA</span>
             </div>
 
@@ -336,7 +453,10 @@ function Hero() {
             <h1 className="font-serif text-[2.05rem] leading-[1.18] sm:text-[2.7rem] md:text-5xl lg:text-6xl xl:text-7xl lg:leading-[1.06]">
               {HEADLINE_WORDS.map((w, i) => (
                 <span key={i}>
-                  <span className="inline-block overflow-hidden" style={{ verticalAlign: "bottom" }}>
+                  <span
+                    className="inline-block overflow-hidden"
+                    style={{ verticalAlign: "bottom" }}
+                  >
                     <span
                       className={`inline-block${w.gold ? " text-gold gold-text-glow" : ""}`}
                       style={{
@@ -359,10 +479,12 @@ function Hero() {
               style={{
                 opacity: ready ? 1 : 0,
                 transform: ready ? "translateY(0)" : "translateY(20px)",
-                transition: "opacity 0.8s ease 700ms, transform 0.8s cubic-bezier(0.16,1,0.3,1) 700ms",
+                transition:
+                  "opacity 0.8s ease 700ms, transform 0.8s cubic-bezier(0.16,1,0.3,1) 700ms",
               }}
             >
-              NairaLens handles every WhatsApp lead around the clock — qualifying, pushing back on objections, and locking in deals. No commissions. No sick days. No 6 PM cut-off.
+              NairaLens handles every WhatsApp lead around the clock — qualifying, pushing back on
+              objections, and locking in deals. No commissions. No sick days. No 6 PM cut-off.
             </p>
 
             {/* CTAs */}
@@ -371,19 +493,27 @@ function Hero() {
               style={{
                 opacity: ready ? 1 : 0,
                 transform: ready ? "translateY(0)" : "translateY(20px)",
-                transition: "opacity 0.8s ease 840ms, transform 0.8s cubic-bezier(0.16,1,0.3,1) 840ms",
+                transition:
+                  "opacity 0.8s ease 840ms, transform 0.8s cubic-bezier(0.16,1,0.3,1) 840ms",
               }}
             >
               <Magnetic>
                 <Link to="/onboarding">
-                  <Button size="lg" className="bg-gold text-noir hover:bg-gold/90 font-semibold cta-pulse">
+                  <Button
+                    size="lg"
+                    className="bg-gold text-noir hover:bg-gold/90 font-semibold cta-pulse"
+                  >
                     Activate My AI Closer <ArrowRight className="ml-2 w-4 h-4" />
                   </Button>
                 </Link>
               </Magnetic>
               <Magnetic>
                 <a href="#how">
-                  <Button size="lg" variant="outline" className="border-gold/40 text-gold hover:bg-gold/10 transition-colors">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="border-gold/40 text-gold hover:bg-gold/10 transition-colors"
+                  >
                     See How It Works
                   </Button>
                 </a>
@@ -401,8 +531,8 @@ function Hero() {
             <div className="mt-8 flex gap-6 sm:gap-10 justify-center lg:justify-start">
               {[
                 { value: "3.2×", label: "Revenue lift", delay: 1020 },
-                { value: "73%",  label: "Close rate",   delay: 1140 },
-                { value: "<8s",  label: "Reply time",   delay: 1260 },
+                { value: "73%", label: "Close rate", delay: 1140 },
+                { value: "<8s", label: "Reply time", delay: 1260 },
               ].map(({ value, label, delay }) => (
                 <div
                   key={label}
@@ -412,8 +542,12 @@ function Hero() {
                     transition: `opacity 0.6s ease ${delay}ms, transform 0.6s cubic-bezier(0.16,1,0.3,1) ${delay}ms`,
                   }}
                 >
-                  <div className="font-serif text-2xl sm:text-3xl text-gold gold-text-glow">{value}</div>
-                  <div className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">{label}</div>
+                  <div className="font-serif text-2xl sm:text-3xl text-gold gold-text-glow">
+                    {value}
+                  </div>
+                  <div className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">
+                    {label}
+                  </div>
                 </div>
               ))}
             </div>
@@ -432,14 +566,14 @@ function Hero() {
             style={{
               opacity: ready ? 1 : 0,
               transform: ready ? "translateX(0)" : "translateX(52px)",
-              transition: "opacity 0.9s ease 280ms, transform 0.9s cubic-bezier(0.16,1,0.3,1) 280ms",
+              transition:
+                "opacity 0.9s ease 280ms, transform 0.9s cubic-bezier(0.16,1,0.3,1) 280ms",
             }}
           >
             <div className="float-slow">
               <LiveNegotiationCard />
             </div>
           </div>
-
         </div>
       </div>
     </section>
@@ -453,16 +587,20 @@ function LiveNegotiationCard() {
   const [msgIdx, setMsgIdx] = useState(0);
   const messages = [
     { role: "lead", text: "Is the Maitama plot still available?" },
-    { role: "ai",   text: "Yes — Plot 14 at ₦185M. Only one left.",     note: "↳ Scarcity trigger" },
+    { role: "ai", text: "Yes — Plot 14 at ₦185M. Only one left.", note: "↳ Scarcity trigger" },
     { role: "lead", text: "That's high. Can we negotiate?" },
-    { role: "ai",   text: "I can hold it 24hrs for a site visit today.", note: "↳ Binary close + urgency" },
+    {
+      role: "ai",
+      text: "I can hold it 24hrs for a site visit today.",
+      note: "↳ Binary close + urgency",
+    },
     { role: "lead", text: "Okay, what time works?" },
-    { role: "ai",   text: "10 AM or 2 PM — which suits you?",           note: "↳ Assumptive close" },
+    { role: "ai", text: "10 AM or 2 PM — which suits you?", note: "↳ Assumptive close" },
   ];
   useEffect(() => {
     const t = setInterval(() => {
-      setScore(s => s >= 95 ? 66 : Math.min(96, s + Math.floor(Math.random() * 7) + 2));
-      setMsgIdx(i => (i + 1) % (messages.length + 1));
+      setScore((s) => (s >= 95 ? 66 : Math.min(96, s + Math.floor(Math.random() * 7) + 2)));
+      setMsgIdx((i) => (i + 1) % (messages.length + 1));
     }, 2000);
     return () => clearInterval(t);
   }, []);
@@ -479,9 +617,13 @@ function LiveNegotiationCard() {
           <span className="font-mono text-xs text-gold">MAITAMA, ABUJA</span>
         </div>
         <div className="mb-4">
-          <div className="text-[10px] text-muted-foreground mb-1 font-mono tracking-widest">BUYER INTENT</div>
+          <div className="text-[10px] text-muted-foreground mb-1 font-mono tracking-widest">
+            BUYER INTENT
+          </div>
           <div className="flex items-end gap-2">
-            <span className="font-mono text-5xl text-gold gold-text-glow transition-all duration-500">{score}</span>
+            <span className="font-mono text-5xl text-gold gold-text-glow transition-all duration-500">
+              {score}
+            </span>
             <span className="text-muted-foreground text-sm pb-2">/ 100</span>
           </div>
           <div className="mt-2 h-1.5 bg-noir-elevated rounded-full overflow-hidden">
@@ -493,11 +635,18 @@ function LiveNegotiationCard() {
         </div>
         <div className="space-y-2.5 max-h-60 overflow-hidden">
           {messages.slice(0, msgIdx + 1).map((m, i) => (
-            <div key={i} className={`text-sm ${m.role === "ai" ? "text-foreground" : "text-muted-foreground"}`}>
-              <div className={`px-3 py-2 rounded-xl text-xs sm:text-sm ${m.role === "ai" ? "bg-gold/10 border border-gold/20" : "bg-noir-elevated"} max-w-[88%] ${m.role === "lead" ? "ml-auto" : ""}`}>
+            <div
+              key={i}
+              className={`text-sm ${m.role === "ai" ? "text-foreground" : "text-muted-foreground"}`}
+            >
+              <div
+                className={`px-3 py-2 rounded-xl text-xs sm:text-sm ${m.role === "ai" ? "bg-gold/10 border border-gold/20" : "bg-noir-elevated"} max-w-[88%] ${m.role === "lead" ? "ml-auto" : ""}`}
+              >
                 {m.text}
               </div>
-              {m.note && <div className="font-mono text-[10px] text-gold/70 mt-1 ml-2">{m.note}</div>}
+              {m.note && (
+                <div className="font-mono text-[10px] text-gold/70 mt-1 ml-2">{m.note}</div>
+              )}
             </div>
           ))}
         </div>
@@ -550,7 +699,10 @@ function ProofBar() {
     <section className="py-10 border-y border-border bg-noir-elevated/30 overflow-hidden">
       <div className="flex ticker whitespace-nowrap">
         {[...proofStats, ...proofStats].map((s, i) => (
-          <div key={i} className="flex items-center px-8 sm:px-10 font-mono text-gold text-base sm:text-lg">
+          <div
+            key={i}
+            className="flex items-center px-8 sm:px-10 font-mono text-gold text-base sm:text-lg"
+          >
             <span>{s}</span>
             <span className="mx-8 sm:mx-10 text-gold/30">◆</span>
           </div>
@@ -564,33 +716,40 @@ function ProofBar() {
 
 function VsHumanSection() {
   const rows = [
-    { metric: "Reply time",                 human: "47 minutes avg",        ai: "< 8 seconds" },
-    { metric: "Working hours",              human: "8–10 hrs/day",          ai: "24 / 7 / 365" },
-    { metric: "Simultaneous conversations", human: "2–3 max",               ai: "Unlimited" },
-    { metric: "Objection recall",           human: "Inconsistent",          ai: "Instant, every time" },
-    { metric: "Midnight availability",      human: "Unavailable",           ai: "Full capacity" },
-    { metric: "Live FX & market data",      human: "Manual research",       ai: "Auto-injected" },
-    { metric: "Monthly cost",               human: "₦400k–2M + commission", ai: "Flat subscription" },
+    { metric: "Reply time", human: "47 minutes avg", ai: "< 8 seconds" },
+    { metric: "Working hours", human: "8–10 hrs/day", ai: "24 / 7 / 365" },
+    { metric: "Simultaneous conversations", human: "2–3 max", ai: "Unlimited" },
+    { metric: "Objection recall", human: "Inconsistent", ai: "Instant, every time" },
+    { metric: "Midnight availability", human: "Unavailable", ai: "Full capacity" },
+    { metric: "Live FX & market data", human: "Manual research", ai: "Auto-injected" },
+    { metric: "Monthly cost", human: "₦400k–2M + commission", ai: "Flat subscription" },
   ];
   return (
     <section id="vs-human" className="py-20 sm:py-24 px-4 sm:px-6">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12 sm:mb-16">
-          <Reveal dir="fade"><p className="font-mono text-xs text-gold mb-4">— THE EDGE —</p></Reveal>
+          <Reveal dir="fade">
+            <p className="font-mono text-xs text-gold mb-4">— THE EDGE —</p>
+          </Reveal>
           <RevealHeading
             lines={["Why NairaLens out-performs", "even the best human closer."]}
             className="font-serif text-3xl sm:text-4xl md:text-5xl"
           />
           <Reveal dir="up" delay={200}>
             <p className="text-muted-foreground mt-4 max-w-2xl mx-auto text-sm sm:text-base">
-              Great agents exist. But they clock out, get sick, forget follow-ups, and can only hold one conversation at a time. NairaLens has none of those limits.
+              Great agents exist. But they clock out, get sick, forget follow-ups, and can only hold
+              one conversation at a time. NairaLens has none of those limits.
             </p>
           </Reveal>
         </div>
         <div className="glass rounded-2xl overflow-hidden border border-gold/20">
           <div className="grid grid-cols-3 px-4 sm:px-6 py-4 border-b border-border bg-noir-elevated/40">
-            <div className="font-mono text-[10px] sm:text-xs text-muted-foreground uppercase">Metric</div>
-            <div className="font-mono text-[10px] sm:text-xs text-muted-foreground uppercase">Human Realtor</div>
+            <div className="font-mono text-[10px] sm:text-xs text-muted-foreground uppercase">
+              Metric
+            </div>
+            <div className="font-mono text-[10px] sm:text-xs text-muted-foreground uppercase">
+              Human Realtor
+            </div>
             <div className="font-mono text-[10px] sm:text-xs text-gold uppercase">NairaLens AI</div>
           </div>
           {rows.map((r, i) => (
@@ -614,16 +773,33 @@ function VsHumanSection() {
 
 function RevenueMultiplier() {
   const cards = [
-    { icon: Banknote, title: "Revenue × 3.2",    desc: "Every lead that messages your number gets an instant, intelligent reply — midnight, Sunday, or mid-presentation. No lead left cold." },
-    { icon: Target,   title: "Profit × 2.4",     desc: "Handle an unlimited volume of leads with zero headcount increase. No payroll. No commission. No downtime." },
-    { icon: Clock,    title: "Cycle × 5 faster", desc: "Leads get a reply in under 8 seconds. Pre-built objection scripts deploy instantly. Your pipeline shrinks from weeks to days." },
+    {
+      icon: Banknote,
+      title: "Revenue × 3.2",
+      desc: "Every lead that messages your number gets an instant, intelligent reply — midnight, Sunday, or mid-presentation. No lead left cold.",
+    },
+    {
+      icon: Target,
+      title: "Profit × 2.4",
+      desc: "Handle an unlimited volume of leads with zero headcount increase. No payroll. No commission. No downtime.",
+    },
+    {
+      icon: Clock,
+      title: "Cycle × 5 faster",
+      desc: "Leads get a reply in under 8 seconds. Pre-built objection scripts deploy instantly. Your pipeline shrinks from weeks to days.",
+    },
   ];
   return (
     <section className="py-20 sm:py-24 px-4 sm:px-6 bg-noir-elevated/30">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12 sm:mb-16">
-          <Reveal dir="fade"><p className="font-mono text-xs text-gold mb-4">— THE OUTCOME —</p></Reveal>
-          <RevealHeading lines={["Multiply revenue.", "Boost profit. Asymmetrically."]} className="font-serif text-3xl sm:text-4xl md:text-5xl" />
+          <Reveal dir="fade">
+            <p className="font-mono text-xs text-gold mb-4">— THE OUTCOME —</p>
+          </Reveal>
+          <RevealHeading
+            lines={["Multiply revenue.", "Boost profit. Asymmetrically."]}
+            className="font-serif text-3xl sm:text-4xl md:text-5xl"
+          />
         </div>
         <div className="grid md:grid-cols-3 gap-5">
           {cards.map((c, i) => (
@@ -645,16 +821,33 @@ function RevenueMultiplier() {
 
 function HowItWorks() {
   const steps = [
-    { icon: MessageCircle, title: "Lead Hits WhatsApp",    desc: "Any source — Instagram ad, referral, cold inbox — routes straight into your business number." },
-    { icon: Brain,         title: "AI Qualifies Instantly", desc: "Scores intent 0–100, identifies buyer type, deploys the right objection response, and moves the lead toward commitment." },
-    { icon: CheckCircle2,  title: "Deal Closes Itself",    desc: "Site visit booked. Payment plan confirmed. Contract terms locked. You wake up to closed business." },
+    {
+      icon: MessageCircle,
+      title: "Lead Hits WhatsApp",
+      desc: "Any source — Instagram ad, referral, cold inbox — routes straight into your business number.",
+    },
+    {
+      icon: Brain,
+      title: "AI Qualifies Instantly",
+      desc: "Scores intent 0–100, identifies buyer type, deploys the right objection response, and moves the lead toward commitment.",
+    },
+    {
+      icon: CheckCircle2,
+      title: "Deal Closes Itself",
+      desc: "Site visit booked. Payment plan confirmed. Contract terms locked. You wake up to closed business.",
+    },
   ];
   return (
     <section id="how" className="py-20 sm:py-24 px-4 sm:px-6">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12 sm:mb-16">
-          <Reveal dir="fade"><p className="font-mono text-xs text-gold mb-4">— THE ENGINE —</p></Reveal>
-          <RevealHeading lines={["Three steps.", "Deals closed on autopilot."]} className="font-serif text-3xl sm:text-4xl md:text-5xl" />
+          <Reveal dir="fade">
+            <p className="font-mono text-xs text-gold mb-4">— THE ENGINE —</p>
+          </Reveal>
+          <RevealHeading
+            lines={["Three steps.", "Deals closed on autopilot."]}
+            className="font-serif text-3xl sm:text-4xl md:text-5xl"
+          />
         </div>
         <div className="grid md:grid-cols-3 gap-5 sm:gap-6">
           {steps.map((s, i) => (
@@ -691,22 +884,31 @@ function WhatsAppIntegration() {
     <section id="whatsapp" className="py-20 sm:py-24 px-4 sm:px-6 bg-noir-elevated/30">
       <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-10 items-center">
         <div>
-          <Reveal dir="fade"><p className="font-mono text-xs text-gold mb-4">— PLUG-IN —</p></Reveal>
-          <RevealHeading lines={["Connected in", "under 60 seconds."]} className="font-serif text-3xl sm:text-4xl md:text-5xl" />
+          <Reveal dir="fade">
+            <p className="font-mono text-xs text-gold mb-4">— PLUG-IN —</p>
+          </Reveal>
+          <RevealHeading
+            lines={["Connected in", "under 60 seconds."]}
+            className="font-serif text-3xl sm:text-4xl md:text-5xl"
+          />
           <Reveal dir="left" delay={200}>
             <p className="text-muted-foreground mt-4 text-sm sm:text-base max-w-md">
-              No API keys. No developer setup. Connect your Meta account once and NairaLens handles every inbound lead — from WhatsApp messages and Meta ad forms alike.
+              No API keys. No developer setup. Connect your Meta account once and NairaLens handles
+              every inbound lead — from WhatsApp messages and Meta ad forms alike.
             </p>
             <ol className="mt-6 space-y-3">
               {steps.map((s, i) => (
                 <li key={i} className="flex gap-3 text-sm sm:text-base">
-                  <span className="w-6 h-6 shrink-0 rounded-full bg-gold/15 border border-gold/40 text-gold font-mono text-xs flex items-center justify-center">{i + 1}</span>
+                  <span className="w-6 h-6 shrink-0 rounded-full bg-gold/15 border border-gold/40 text-gold font-mono text-xs flex items-center justify-center">
+                    {i + 1}
+                  </span>
                   <span className="text-muted-foreground">{s}</span>
                 </li>
               ))}
             </ol>
             <div className="mt-6 px-4 py-3 rounded-lg bg-gold/5 border border-gold/20 text-xs sm:text-sm text-gold">
-              ⚡ WhatsApp Business numbers and Meta Lead Ad accounts both supported — your leads, one pipeline, one AI.
+              ⚡ WhatsApp Business numbers and Meta Lead Ad accounts both supported — your leads,
+              one pipeline, one AI.
             </div>
           </Reveal>
         </div>
@@ -718,20 +920,29 @@ function WhatsAppIntegration() {
                 <div className="w-7 h-7 rounded bg-[#1877F2]/20 flex items-center justify-center shrink-0">
                   <span className="font-bold text-[#1877F2] text-sm leading-none">f</span>
                 </div>
-                <div className="text-xs font-mono text-muted-foreground">Meta Lead — Maitama Gardens Campaign</div>
+                <div className="text-xs font-mono text-muted-foreground">
+                  Meta Lead — Maitama Gardens Campaign
+                </div>
                 <div className="ml-auto text-[10px] font-mono text-success shrink-0">● LIVE</div>
               </div>
               <div className="space-y-2 text-sm">
-                <div className="text-[10px] font-mono text-muted-foreground mb-2 uppercase tracking-wider">Lead submitted form → NairaLens AI</div>
+                <div className="text-[10px] font-mono text-muted-foreground mb-2 uppercase tracking-wider">
+                  Lead submitted form → NairaLens AI
+                </div>
                 <div className="bg-noir-elevated rounded-xl px-3 py-2 max-w-[82%] text-xs leading-relaxed">
-                  Name: Chukwuemeka Obi<br />
-                  Phone: +234 803 ••• 4421<br />
+                  Name: Chukwuemeka Obi
+                  <br />
+                  Phone: +234 803 ••• 4421
+                  <br />
                   Interest: 600sqm Maitama plot
                 </div>
                 <div className="ml-auto bg-gold/10 border border-gold/20 rounded-xl px-3 py-2 max-w-[85%] text-xs">
-                  Hi Chukwuemeka 👋 Thanks for your interest in Plot 14. It's still live at ₦185M. Are you buying for yourself or as an investment?
+                  Hi Chukwuemeka 👋 Thanks for your interest in Plot 14. It's still live at ₦185M.
+                  Are you buying for yourself or as an investment?
                 </div>
-                <div className="font-mono text-[10px] text-gold mt-1">↳ AI engaged in 4s · Intent score: 71</div>
+                <div className="font-mono text-[10px] text-gold mt-1">
+                  ↳ AI engaged in 4s · Intent score: 71
+                </div>
               </div>
             </div>
           </div>
@@ -744,12 +955,36 @@ function WhatsAppIntegration() {
 // ─── Features ─────────────────────────────────────────────────────────────────
 
 const features = [
-  { icon: Activity,   title: "Live Intent Scoring",     desc: "Every lead is scored 0–100 in real time. You always know who's hot and who needs more time." },
-  { icon: Zap,        title: "Objection Kill-Switch",   desc: "Pre-program your best responses to any objection. Deployed in the right moment, every time." },
-  { icon: TrendingUp, title: "Market Pulse Sync",       desc: "Live FX rates, infrastructure news, and market data injected into conversations automatically." },
-  { icon: Eye,        title: "Full Conversation Audit", desc: "Every WhatsApp chat is logged with AI annotations showing which tactics fired and why." },
-  { icon: Brain,      title: "Legal Document Brain",    desc: "Upload your C of O, Gazette, Survey Plans. The AI recalls and quotes the right documents on demand." },
-  { icon: Hand,       title: "Manual Override",         desc: "Take control of any chat the moment you want. Your instincts, amplified — not replaced." },
+  {
+    icon: Activity,
+    title: "Live Intent Scoring",
+    desc: "Every lead is scored 0–100 in real time. You always know who's hot and who needs more time.",
+  },
+  {
+    icon: Zap,
+    title: "Objection Kill-Switch",
+    desc: "Pre-program your best responses to any objection. Deployed in the right moment, every time.",
+  },
+  {
+    icon: TrendingUp,
+    title: "Market Pulse Sync",
+    desc: "Live FX rates, infrastructure news, and market data injected into conversations automatically.",
+  },
+  {
+    icon: Eye,
+    title: "Full Conversation Audit",
+    desc: "Every WhatsApp chat is logged with AI annotations showing which tactics fired and why.",
+  },
+  {
+    icon: Brain,
+    title: "Legal Document Brain",
+    desc: "Upload your C of O, Gazette, Survey Plans. The AI recalls and quotes the right documents on demand.",
+  },
+  {
+    icon: Hand,
+    title: "Manual Override",
+    desc: "Take control of any chat the moment you want. Your instincts, amplified — not replaced.",
+  },
 ];
 
 function Features() {
@@ -757,8 +992,13 @@ function Features() {
     <section id="features" className="py-20 sm:py-24 px-4 sm:px-6">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12 sm:mb-16">
-          <Reveal dir="fade"><p className="font-mono text-xs text-gold mb-4">— THE ARSENAL —</p></Reveal>
-          <RevealHeading lines={["Trained on the world's best", "sales experts."]} className="font-serif text-3xl sm:text-4xl md:text-5xl" />
+          <Reveal dir="fade">
+            <p className="font-mono text-xs text-gold mb-4">— THE ARSENAL —</p>
+          </Reveal>
+          <RevealHeading
+            lines={["Trained on the world's best", "sales experts."]}
+            className="font-serif text-3xl sm:text-4xl md:text-5xl"
+          />
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {features.map((f, i) => (
@@ -797,8 +1037,13 @@ function PhotoGrid() {
     <section className="py-20 sm:py-24 px-4 sm:px-6 bg-noir-elevated/30">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12 sm:mb-16">
-          <Reveal dir="fade"><p className="font-mono text-xs text-gold mb-4">— IN THE FIELD —</p></Reveal>
-          <RevealHeading lines={["Real deals.", "Real numbers."]} className="font-serif text-3xl sm:text-4xl md:text-5xl" />
+          <Reveal dir="fade">
+            <p className="font-mono text-xs text-gold mb-4">— IN THE FIELD —</p>
+          </Reveal>
+          <RevealHeading
+            lines={["Real deals.", "Real numbers."]}
+            className="font-serif text-3xl sm:text-4xl md:text-5xl"
+          />
         </div>
         <div className="grid md:grid-cols-3 gap-4 sm:gap-5">
           {GRID_PHOTOS.map((p, i) => (
@@ -812,8 +1057,12 @@ function PhotoGrid() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-noir/90 via-noir/40 to-noir/10" />
                 <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6">
-                  <div className="font-serif text-2xl sm:text-3xl text-gold gold-text-glow">{p.stat}</div>
-                  <div className="text-xs sm:text-sm text-foreground/75 mt-1 font-mono">{p.label}</div>
+                  <div className="font-serif text-2xl sm:text-3xl text-gold gold-text-glow">
+                    {p.stat}
+                  </div>
+                  <div className="text-xs sm:text-sm text-foreground/75 mt-1 font-mono">
+                    {p.label}
+                  </div>
                 </div>
               </div>
             </Reveal>
@@ -863,8 +1112,13 @@ function FAQ() {
     <section className="py-20 sm:py-24 px-4 sm:px-6 bg-noir-elevated/30">
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-12">
-          <Reveal dir="fade"><p className="font-mono text-xs text-gold mb-4">— FAQ —</p></Reveal>
-          <RevealHeading lines={["Everything you need", "to know."]} className="font-serif text-3xl sm:text-4xl md:text-5xl" />
+          <Reveal dir="fade">
+            <p className="font-mono text-xs text-gold mb-4">— FAQ —</p>
+          </Reveal>
+          <RevealHeading
+            lines={["Everything you need", "to know."]}
+            className="font-serif text-3xl sm:text-4xl md:text-5xl"
+          />
         </div>
         <div className="space-y-3">
           {FAQ_ITEMS.map((item, i) => (
@@ -886,7 +1140,9 @@ function FAQ() {
                   className="overflow-hidden transition-all duration-300"
                   style={{ maxHeight: open === i ? "300px" : "0px" }}
                 >
-                  <p className="px-5 pb-5 text-sm text-muted-foreground leading-relaxed">{item.a}</p>
+                  <p className="px-5 pb-5 text-sm text-muted-foreground leading-relaxed">
+                    {item.a}
+                  </p>
                 </div>
               </div>
             </Reveal>
@@ -914,13 +1170,18 @@ function FinalCTA() {
           <div className="mt-8 inline-block">
             <Magnetic>
               <Link to="/onboarding">
-                <Button size="lg" className="bg-gold text-noir hover:bg-gold/90 font-semibold cta-pulse">
+                <Button
+                  size="lg"
+                  className="bg-gold text-noir hover:bg-gold/90 font-semibold cta-pulse"
+                >
                   Activate My AI Closer <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               </Link>
             </Magnetic>
           </div>
-          <p className="mt-4 text-xs font-mono text-muted-foreground/60">No credit card required · Cancel anytime</p>
+          <p className="mt-4 text-xs font-mono text-muted-foreground/60">
+            No credit card required · Cancel anytime
+          </p>
         </div>
       </Reveal>
     </section>
@@ -936,24 +1197,56 @@ function Footer() {
         <div className="md:col-span-2">
           <Logo size="md" />
           <p className="text-sm text-muted-foreground max-w-md mt-4">
-            The AI sales engine for Nigerian real estate. Built for the Nigerian buyer. Running around the clock.
+            The AI sales engine for Nigerian real estate. Built for the Nigerian buyer. Running
+            around the clock.
           </p>
         </div>
         <div>
           <h4 className="font-mono text-xs text-gold mb-3">PRODUCT</h4>
           <ul className="space-y-2 text-sm text-muted-foreground">
-            <li><a href="#features" className="hover:text-gold transition-colors duration-200">Features</a></li>
-            <li><a href="#whatsapp" className="hover:text-gold transition-colors duration-200">WhatsApp setup</a></li>
-            <li><Link to="/onboarding" className="hover:text-gold transition-colors duration-200">Get started</Link></li>
+            <li>
+              <a href="#features" className="hover:text-gold transition-colors duration-200">
+                Features
+              </a>
+            </li>
+            <li>
+              <a href="#whatsapp" className="hover:text-gold transition-colors duration-200">
+                WhatsApp setup
+              </a>
+            </li>
+            <li>
+              <Link to="/onboarding" className="hover:text-gold transition-colors duration-200">
+                Get started
+              </Link>
+            </li>
           </ul>
         </div>
         <div>
           <h4 className="font-mono text-xs text-gold mb-3">COMPANY</h4>
           <ul className="space-y-2 text-sm text-muted-foreground">
-            <li><a href="#" className="hover:text-gold transition-colors duration-200">About</a></li>
-            <li><Link to="/privacy" className="hover:text-gold transition-colors duration-200">Privacy Policy</Link></li>
-            <li><Link to="/terms"   className="hover:text-gold transition-colors duration-200">Terms of Service</Link></li>
-            <li><a href="mailto:support@nairalens.com" className="hover:text-gold transition-colors duration-200">Contact</a></li>
+            <li>
+              <a href="#" className="hover:text-gold transition-colors duration-200">
+                About
+              </a>
+            </li>
+            <li>
+              <Link to="/privacy" className="hover:text-gold transition-colors duration-200">
+                Privacy Policy
+              </Link>
+            </li>
+            <li>
+              <Link to="/terms" className="hover:text-gold transition-colors duration-200">
+                Terms of Service
+              </Link>
+            </li>
+            <li>
+              <a
+                href="mailto:support@nairalens.com"
+                className="hover:text-gold transition-colors duration-200"
+              >
+                Contact
+              </a>
+            </li>
           </ul>
         </div>
       </div>

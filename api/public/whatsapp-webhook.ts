@@ -75,7 +75,7 @@ async function sbFetch(
   supabaseUrl: string,
   serviceKey: string,
   path: string,
-  opts: RequestInit = {}
+  opts: RequestInit = {},
 ) {
   const res = await fetch(`${supabaseUrl}/rest/v1${path}`, {
     ...opts,
@@ -105,7 +105,13 @@ async function generateAIReply(opts: {
   userMsg: string;
   marketTags: string[];
   companyName: string;
-  properties: { name: string; location: string; size_sqm: number | null; price: number | null; title_type: string }[];
+  properties: {
+    name: string;
+    location: string;
+    size_sqm: number | null;
+    price: number | null;
+    title_type: string;
+  }[];
   triggers?: string;
   cta?: string;
   priceObj?: string;
@@ -115,8 +121,9 @@ async function generateAIReply(opts: {
   const inventoryBlock = opts.properties.length
     ? `YOUR LIVE PROPERTY INVENTORY (use only these — never invent others):\n` +
       opts.properties
-        .map((p) =>
-          `• ${p.name}${p.location ? `, ${p.location}` : ""}${p.size_sqm ? ` — ${p.size_sqm} sqm` : ""}${p.price ? `, ₦${Number(p.price).toLocaleString()}` : ""} | Title: ${p.title_type}`
+        .map(
+          (p) =>
+            `• ${p.name}${p.location ? `, ${p.location}` : ""}${p.size_sqm ? ` — ${p.size_sqm} sqm` : ""}${p.price ? `, ₦${Number(p.price).toLocaleString()}` : ""} | Title: ${p.title_type}`,
         )
         .join("\n")
     : `NO INVENTORY LOADED: Do not mention or invent any specific property names, prices, or locations. Stay in STAGE 1 or STAGE 2 — ask about their goal, budget, and preferences so you can match them when inventory is available.`;
@@ -136,7 +143,9 @@ async function generateAIReply(opts: {
     opts.marketTags.length
       ? `MARKET INTELLIGENCE (weave naturally into conversation as supporting evidence — do not quote verbatim):\n${opts.marketTags.join("\n")}`
       : "",
-    opts.priceObj ? `PRICE OBJECTION SCRIPT (use when lead pushes back on price): ${opts.priceObj}` : "",
+    opts.priceObj
+      ? `PRICE OBJECTION SCRIPT (use when lead pushes back on price): ${opts.priceObj}`
+      : "",
     opts.cta ? `SITE VISIT CTA (use when moving to close): ${opts.cta}` : "",
     opts.triggers
       ? `CLOSING TRIGGERS — if the lead says any of these phrases, immediately move to close: ${opts.triggers}`
@@ -152,12 +161,10 @@ async function generateAIReply(opts: {
   const model = (opts.model || "gemini-2.5-flash").replace(/^google\//, "");
   const messages = [
     { role: "system", content: sys },
-    ...opts.history
-      .slice(-14)
-      .map((m) => ({
-        role: m.role === "ai" ? "assistant" : "user",
-        content: m.message_text,
-      })),
+    ...opts.history.slice(-14).map((m) => ({
+      role: m.role === "ai" ? "assistant" : "user",
+      content: m.message_text,
+    })),
     { role: "user", content: opts.userMsg },
   ];
 
@@ -168,22 +175,19 @@ async function generateAIReply(opts: {
   // Try primary model first, then fallback
   if (shouldTryGroqFirst) {
     try {
-      const r = await fetch(
-        "https://api.groq.com/openai/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${opts.groqKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ 
-            model, 
-            messages,
-            temperature: 0.7,
-            max_tokens: 500,
-          }),
-        }
-      );
+      const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${opts.groqKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          messages,
+          temperature: 0.7,
+          max_tokens: 500,
+        }),
+      });
       if (r.ok) {
         const data = await r.json();
         const reply = data.choices?.[0]?.message?.content?.trim();
@@ -196,10 +200,9 @@ async function generateAIReply(opts: {
   }
 
   // Fallback to Gemini
-  const geminiModel = model.startsWith("llama") || model.startsWith("mixtral") 
-    ? "gemini-2.5-flash"
-    : model;
-    
+  const geminiModel =
+    model.startsWith("llama") || model.startsWith("mixtral") ? "gemini-2.5-flash" : model;
+
   const r = await fetch(
     "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
     {
@@ -209,7 +212,7 @@ async function generateAIReply(opts: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ model: geminiModel, messages }),
-    }
+    },
   );
   if (!r.ok) throw new Error(`Gemini ${r.status}: ${await r.text()}`);
   const data = await r.json();
@@ -219,28 +222,20 @@ async function generateAIReply(opts: {
   );
 }
 
-async function sendWhatsApp(
-  phoneNumberId: string,
-  accessToken: string,
-  to: string,
-  body: string
-) {
-  const r = await fetch(
-    `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        messaging_product: "whatsapp",
-        to,
-        type: "text",
-        text: { body },
-      }),
-    }
-  );
+async function sendWhatsApp(phoneNumberId: string, accessToken: string, to: string, body: string) {
+  const r = await fetch(`https://graph.facebook.com/v21.0/${phoneNumberId}/messages`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      messaging_product: "whatsapp",
+      to,
+      type: "text",
+      text: { body },
+    }),
+  });
   if (!r.ok) console.error("[wa-send]", r.status, await r.text());
 }
 
@@ -256,13 +251,12 @@ export default async function handler(request: Request): Promise<Response> {
     const mode = url.searchParams.get("hub.mode");
     const token = url.searchParams.get("hub.verify_token");
     const challenge = url.searchParams.get("hub.challenge");
-    if (mode !== "subscribe" || !token)
-      return new Response("Bad request", { status: 400 });
+    if (mode !== "subscribe" || !token) return new Response("Bad request", { status: 400 });
 
     const rows = await sbFetch(
       supabaseUrl,
       serviceKey,
-      `/whatsapp_integrations?verify_token=eq.${encodeURIComponent(token)}&select=user_id&limit=1`
+      `/whatsapp_integrations?verify_token=eq.${encodeURIComponent(token)}&select=user_id&limit=1`,
     );
     if (!Array.isArray(rows) || rows.length === 0)
       return new Response("Forbidden", { status: 403 });
@@ -292,7 +286,7 @@ export default async function handler(request: Request): Promise<Response> {
         const integRows = await sbFetch(
           supabaseUrl,
           serviceKey,
-          `/whatsapp_integrations?phone_number_id=eq.${encodeURIComponent(phoneNumberId)}&limit=1`
+          `/whatsapp_integrations?phone_number_id=eq.${encodeURIComponent(phoneNumberId)}&limit=1`,
         );
         const integ = Array.isArray(integRows) ? integRows[0] : null;
         if (!integ) continue;
@@ -300,13 +294,21 @@ export default async function handler(request: Request): Promise<Response> {
         const profileRows = await sbFetch(
           supabaseUrl,
           serviceKey,
-          `/profiles?user_id=eq.${integ.user_id}&limit=1`
+          `/profiles?user_id=eq.${integ.user_id}&limit=1`,
         );
         const profile = Array.isArray(profileRows) ? profileRows[0] : null;
 
         const [tagRows, propertyRows] = await Promise.all([
-          sbFetch(supabaseUrl, serviceKey, `/market_tags?user_id=eq.${integ.user_id}&select=tag_text&limit=10`),
-          sbFetch(supabaseUrl, serviceKey, `/properties?user_id=eq.${integ.user_id}&status=eq.available&select=name,location,size_sqm,price,title_type&limit=10`),
+          sbFetch(
+            supabaseUrl,
+            serviceKey,
+            `/market_tags?user_id=eq.${integ.user_id}&select=tag_text&limit=10`,
+          ),
+          sbFetch(
+            supabaseUrl,
+            serviceKey,
+            `/properties?user_id=eq.${integ.user_id}&status=eq.available&select=name,location,size_sqm,price,title_type&limit=10`,
+          ),
         ]);
         const marketTags = Array.isArray(tagRows) ? tagRows.map((t: any) => t.tag_text) : [];
         const properties = Array.isArray(propertyRows) ? propertyRows : [];
@@ -321,13 +323,12 @@ export default async function handler(request: Request): Promise<Response> {
           const leadRows = await sbFetch(
             supabaseUrl,
             serviceKey,
-            `/leads?user_id=eq.${integ.user_id}&phone=eq.${encodeURIComponent(fromPhone)}&limit=1`
+            `/leads?user_id=eq.${integ.user_id}&phone=eq.${encodeURIComponent(fromPhone)}&limit=1`,
           );
           let lead = Array.isArray(leadRows) ? leadRows[0] : null;
 
           if (!lead) {
-            const contactName =
-              value.contacts?.[0]?.profile?.name || `WA ${fromPhone.slice(-4)}`;
+            const contactName = value.contacts?.[0]?.profile?.name || `WA ${fromPhone.slice(-4)}`;
             const created = await sbFetch(supabaseUrl, serviceKey, `/leads`, {
               method: "POST",
               body: JSON.stringify({
@@ -356,26 +357,23 @@ export default async function handler(request: Request): Promise<Response> {
             }),
           });
 
-          await sbFetch(
-            supabaseUrl,
-            serviceKey,
-            `/leads?id=eq.${lead.id}`,
-            {
-              method: "PATCH",
-              body: JSON.stringify({ last_touch_at: new Date().toISOString() }),
-            }
-          );
+          await sbFetch(supabaseUrl, serviceKey, `/leads?id=eq.${lead.id}`, {
+            method: "PATCH",
+            body: JSON.stringify({ last_touch_at: new Date().toISOString() }),
+          });
 
           if (lead.ai_paused) continue;
 
           const history = await sbFetch(
             supabaseUrl,
             serviceKey,
-            `/conversations?lead_id=eq.${lead.id}&select=role,message_text&order=created_at.asc&limit=20`
+            `/conversations?lead_id=eq.${lead.id}&select=role,message_text&order=created_at.asc&limit=20`,
           );
 
           const userModel = profile?.ai_model || "groq/llama-3.3-70b-versatile";
-          const finalModel = userModel.includes("gemini") ? "groq/llama-3.3-70b-versatile" : userModel;
+          const finalModel = userModel.includes("gemini")
+            ? "groq/llama-3.3-70b-versatile"
+            : userModel;
 
           let reply = "";
           try {
@@ -400,12 +398,7 @@ export default async function handler(request: Request): Promise<Response> {
           }
 
           if (integ.access_token && integ.phone_number_id) {
-            await sendWhatsApp(
-              integ.phone_number_id,
-              integ.access_token,
-              fromPhone,
-              reply
-            );
+            await sendWhatsApp(integ.phone_number_id, integ.access_token, fromPhone, reply);
           }
 
           await sbFetch(supabaseUrl, serviceKey, `/conversations`, {
@@ -421,18 +414,13 @@ export default async function handler(request: Request): Promise<Response> {
           });
         }
 
-        await sbFetch(
-          supabaseUrl,
-          serviceKey,
-          `/whatsapp_integrations?id=eq.${integ.id}`,
-          {
-            method: "PATCH",
-            body: JSON.stringify({
-              last_event_at: new Date().toISOString(),
-              status: "connected",
-            }),
-          }
-        );
+        await sbFetch(supabaseUrl, serviceKey, `/whatsapp_integrations?id=eq.${integ.id}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            last_event_at: new Date().toISOString(),
+            status: "connected",
+          }),
+        });
       }
     }
   } catch (e: any) {

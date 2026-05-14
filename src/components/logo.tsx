@@ -30,19 +30,33 @@ export function Logo({ size = "md", withWordmark = true, to = "/", className = "
           </linearGradient>
         </defs>
         {/* outer plate */}
-        <rect x="2" y="2" width="60" height="60" rx="14" fill="url(#nl-bg)" stroke="url(#nl-mark)" strokeWidth="1.5" />
+        <rect
+          x="2"
+          y="2"
+          width="60"
+          height="60"
+          rx="14"
+          fill="url(#nl-bg)"
+          stroke="url(#nl-mark)"
+          strokeWidth="1.5"
+        />
         {/* lens ring */}
         <circle cx="32" cy="30" r="15" stroke="url(#nl-mark)" strokeWidth="2.4" fill="none" />
         {/* monogram N inside lens */}
-        <path
-          d="M25 38V22h2.4l9.2 11.4V22H39v16h-2.4l-9.2-11.4V38H25z"
-          fill="url(#nl-mark)"
-        />
+        <path d="M25 38V22h2.4l9.2 11.4V22H39v16h-2.4l-9.2-11.4V38H25z" fill="url(#nl-mark)" />
         {/* naira bar through monogram */}
         <line x1="22" y1="28" x2="42" y2="28" stroke="url(#nl-mark)" strokeWidth="1.4" />
         <line x1="22" y1="32" x2="42" y2="32" stroke="url(#nl-mark)" strokeWidth="1.4" />
         {/* lens handle */}
-        <line x1="43.5" y1="41.5" x2="52" y2="50" stroke="url(#nl-mark)" strokeWidth="3" strokeLinecap="round" />
+        <line
+          x1="43.5"
+          y1="41.5"
+          x2="52"
+          y2="50"
+          stroke="url(#nl-mark)"
+          strokeWidth="3"
+          strokeLinecap="round"
+        />
       </svg>
       {withWordmark && (
         <div className="flex flex-col leading-none">

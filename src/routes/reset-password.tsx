@@ -24,7 +24,9 @@ function ResetPasswordPage() {
 
   useEffect(() => {
     // Supabase fires PASSWORD_RECOVERY when the user lands here via the reset link
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") setReady(true);
     });
     // Also handle page reload — if there's already a recovery session
@@ -56,9 +58,7 @@ function ResetPasswordPage() {
         </div>
         <div className="glass-gold rounded-2xl p-8 gold-glow">
           {!ready ? (
-            <p className="text-sm text-muted-foreground text-center">
-              Verifying reset link…
-            </p>
+            <p className="text-sm text-muted-foreground text-center">Verifying reset link…</p>
           ) : (
             <>
               <h1 className="font-serif text-3xl mb-1">New password.</h1>
@@ -69,8 +69,19 @@ function ResetPasswordPage() {
                 <div>
                   <Label>New password</Label>
                   <div className="relative mt-1.5">
-                    <Input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} className="pr-10" />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      minLength={8}
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
@@ -78,8 +89,19 @@ function ResetPasswordPage() {
                 <div>
                   <Label>Confirm password</Label>
                   <div className="relative mt-1.5">
-                    <Input type={showConfirm ? "text" : "password"} value={confirm} onChange={(e) => setConfirm(e.target.value)} required minLength={8} className="pr-10" />
-                    <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                    <Input
+                      type={showConfirm ? "text" : "password"}
+                      value={confirm}
+                      onChange={(e) => setConfirm(e.target.value)}
+                      required
+                      minLength={8}
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirm(!showConfirm)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
                       {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>

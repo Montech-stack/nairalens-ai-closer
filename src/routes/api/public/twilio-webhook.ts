@@ -2,9 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const PERSONAS: Record<string, string> = {
-  apex_closer: "You are the Apex Closer — Nigeria's sharpest real estate AI. Straight-Line persuasion, urgency engineering, zero hesitation. Reply on WhatsApp in 1-3 short, confident sentences.",
-  diaspora_whisperer: "You are the Diaspora Whisperer. Patient, evidence-led, multi-timezone. Reply on WhatsApp in 1-3 sentences with proof points and clear next steps.",
-  hni_concierge: "You are the HNI Concierge. White-glove tone for ultra-HNI buyers. Reply in 1-3 polished, exclusive sentences.",
+  apex_closer:
+    "You are the Apex Closer — Nigeria's sharpest real estate AI. Straight-Line persuasion, urgency engineering, zero hesitation. Reply on WhatsApp in 1-3 short, confident sentences.",
+  diaspora_whisperer:
+    "You are the Diaspora Whisperer. Patient, evidence-led, multi-timezone. Reply on WhatsApp in 1-3 sentences with proof points and clear next steps.",
+  hni_concierge:
+    "You are the HNI Concierge. White-glove tone for ultra-HNI buyers. Reply in 1-3 polished, exclusive sentences.",
 };
 
 const SALES_FRAMEWORK = `
@@ -63,8 +66,10 @@ Goal: Get a commitment — site visit date, document request, or deposit intent.
 // ─────────────────────────────────────────────
 function detectStage(messageCount: number): string {
   if (messageCount <= 4) return "STAGE 1 — QUALIFY: Focus on intent and budget. Do not pitch yet.";
-  if (messageCount <= 8) return "STAGE 2 — PAIN & TRUST: One pain point question max. Acknowledge and advance. Do not loop.";
-  if (messageCount <= 12) return "STAGE 3 — PRESENT: Offer one specific property option. Be concrete.";
+  if (messageCount <= 8)
+    return "STAGE 2 — PAIN & TRUST: One pain point question max. Acknowledge and advance. Do not loop.";
+  if (messageCount <= 12)
+    return "STAGE 3 — PRESENT: Offer one specific property option. Be concrete.";
   return "STAGE 4 — CLOSE: Drive toward site visit or deposit. Create urgency if needed.";
 }
 
@@ -74,7 +79,7 @@ function detectStage(messageCount: number): string {
 async function callProvider(
   provider: "groq" | "gemini",
   model: string,
-  messages: { role: string; content: string }[]
+  messages: { role: string; content: string }[],
 ): Promise<string | null> {
   if (provider === "groq") {
     const apiKey = process.env.GROQ_API_KEY;
@@ -97,7 +102,7 @@ async function callProvider(
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({ model, messages, max_tokens: 160, temperature: 0.7 }),
-    }
+    },
   );
   if (!response.ok) throw new Error(`Gemini ${response.status}: ${await response.text()}`);
   const data = await response.json();
@@ -191,16 +196,18 @@ function twiml(message: string) {
   const safe = message.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   return new Response(
     `<?xml version="1.0" encoding="UTF-8"?><Response><Message>${safe}</Message></Response>`,
-    { status: 200, headers: { "Content-Type": "text/xml" } }
+    { status: 200, headers: { "Content-Type": "text/xml" } },
   );
 }
-
 
 export const Route = createFileRoute("/api/public/twilio-webhook")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        let from = "", body = "", to = "", msgSid = "";
+        let from = "",
+          body = "",
+          to = "",
+          msgSid = "";
         try {
           const text = await request.text();
           const params = new URLSearchParams(text);
@@ -228,42 +235,66 @@ export const Route = createFileRoute("/api/public/twilio-webhook")({
           }
 
           const { data: profile } = await supabaseAdmin
-            .from("profiles").select("*").eq("user_id", integ.user_id).maybeSingle();
+            .from("profiles")
+            .select("*")
+            .eq("user_id", integ.user_id)
+            .maybeSingle();
           const { data: tagRows } = await supabaseAdmin
-            .from("market_tags").select("tag_text").eq("user_id", integ.user_id).limit(10);
+            .from("market_tags")
+            .select("tag_text")
+            .eq("user_id", integ.user_id)
+            .limit(10);
           const marketTags = (tagRows ?? []).map((t: any) => t.tag_text);
 
           // Find or create lead
           let { data: lead } = await supabaseAdmin
-            .from("leads").select("*")
-            .eq("user_id", integ.user_id).eq("phone", from).maybeSingle();
+            .from("leads")
+            .select("*")
+            .eq("user_id", integ.user_id)
+            .eq("phone", from)
+            .maybeSingle();
           if (!lead) {
             const { data: created } = await supabaseAdmin
-              .from("leads").insert({
-                user_id: integ.user_id, name: `WA ${from.slice(-4)}`, phone: from,
-                source: "WhatsApp (Twilio)", stage: "warm", intent_score: 50,
+              .from("leads")
+              .insert({
+                user_id: integ.user_id,
+                name: `WA ${from.slice(-4)}`,
+                phone: from,
+                source: "WhatsApp (Twilio)",
+                stage: "warm",
+                intent_score: 50,
                 last_touch_at: new Date().toISOString(),
-              }).select().single();
+              })
+              .select()
+              .single();
             lead = created;
           }
           if (!lead) return twiml("Unable to create lead record.");
 
           // Dedupe
-          const { error: insErr } = await supabaseAdmin
-            .from("conversations").insert({
-              user_id: integ.user_id, lead_id: lead.id, role: "lead",
-              message_text: body, wa_message_id: msgSid || null,
-            });
+          const { error: insErr } = await supabaseAdmin.from("conversations").insert({
+            user_id: integ.user_id,
+            lead_id: lead.id,
+            role: "lead",
+            message_text: body,
+            wa_message_id: msgSid || null,
+          });
           if (insErr?.code === "23505") return new Response("", { status: 200 });
 
-          await supabaseAdmin.from("leads").update({ last_touch_at: new Date().toISOString() }).eq("id", lead.id);
+          await supabaseAdmin
+            .from("leads")
+            .update({ last_touch_at: new Date().toISOString() })
+            .eq("id", lead.id);
 
           if (lead.ai_paused) return new Response("", { status: 200 });
 
           // Conversation history
           const { data: history } = await supabaseAdmin
-            .from("conversations").select("role,message_text")
-            .eq("lead_id", lead.id).order("created_at", { ascending: true }).limit(20);
+            .from("conversations")
+            .select("role,message_text")
+            .eq("lead_id", lead.id)
+            .order("created_at", { ascending: true })
+            .limit(20);
 
           let reply = "";
           try {
@@ -285,11 +316,15 @@ export const Route = createFileRoute("/api/public/twilio-webhook")({
           }
 
           await supabaseAdmin.from("conversations").insert({
-            user_id: integ.user_id, lead_id: lead.id, role: "ai",
-            message_text: reply, annotation: "↳ AI auto-reply (Twilio sandbox)",
+            user_id: integ.user_id,
+            lead_id: lead.id,
+            role: "ai",
+            message_text: reply,
+            annotation: "↳ AI auto-reply (Twilio sandbox)",
           });
 
-          await supabaseAdmin.from("whatsapp_integrations")
+          await supabaseAdmin
+            .from("whatsapp_integrations")
             .update({ last_event_at: new Date().toISOString(), status: "connected" })
             .eq("id", integ.id);
 

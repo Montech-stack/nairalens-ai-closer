@@ -19,8 +19,8 @@ writeFileSync(
   JSON.stringify(
     { runtime: "nodejs20.x", handler: "index.js", launcherType: "Nodejs", shouldAddHelpers: false },
     null,
-    2
-  )
+    2,
+  ),
 );
 
 // Thin adapter: bridges Vercel's Node.js req/res to the Fetch API handler
@@ -71,7 +71,7 @@ export default async function vercelHandler(req, res) {
   }
   res.end();
 }
-`
+`,
 );
 
 // Routing: static files first, then everything else to SSR function
@@ -94,8 +94,8 @@ writeFileSync(
       ],
     },
     null,
-    2
-  )
+    2,
+  ),
 );
 
 console.log("Vercel Build Output API structure assembled at .vercel/output/");

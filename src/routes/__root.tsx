@@ -1,7 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
-  Outlet, Link, createRootRouteWithContext, useRouter,
-  HeadContent, Scripts,
+  Outlet,
+  Link,
+  createRootRouteWithContext,
+  useRouter,
+  HeadContent,
+  Scripts,
 } from "@tanstack/react-router";
 import { useEffect } from "react";
 import appCss from "../styles.css?url";
@@ -15,7 +19,10 @@ function NotFoundComponent() {
       <div className="max-w-md text-center glass rounded-2xl p-10">
         <h1 className="font-serif text-7xl text-gold gold-text-glow">404</h1>
         <p className="mt-4 text-muted-foreground">This page is off the market.</p>
-        <Link to="/" className="mt-6 inline-flex items-center justify-center rounded-md bg-gold px-5 py-2.5 text-sm font-semibold text-noir hover:opacity-90">
+        <Link
+          to="/"
+          className="mt-6 inline-flex items-center justify-center rounded-md bg-gold px-5 py-2.5 text-sm font-semibold text-noir hover:opacity-90"
+        >
           Back to NairaLens
         </Link>
       </div>
@@ -32,7 +39,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         <h1 className="font-serif text-2xl text-foreground">Something went wrong</h1>
         <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
         <button
-          onClick={() => { router.invalidate(); reset(); }}
+          onClick={() => {
+            router.invalidate();
+            reset();
+          }}
           className="mt-6 rounded-md bg-gold px-5 py-2.5 text-sm font-semibold text-noir"
         >
           Try again
@@ -48,12 +58,24 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "NairaLens — AI Real Estate Sales Engine for Nigeria" },
-      { name: "description", content: "NairaLens is the autonomous AI sales engine that qualifies leads, handles objections, and closes Nigerian real estate deals on WhatsApp 24/7." },
+      {
+        name: "description",
+        content:
+          "NairaLens is the autonomous AI sales engine that qualifies leads, handles objections, and closes Nigerian real estate deals on WhatsApp 24/7.",
+      },
       { property: "og:title", content: "NairaLens — AI Real Estate Sales Engine for Nigeria" },
-      { property: "og:description", content: "NairaLens is the autonomous AI sales engine that qualifies leads, handles objections, and closes Nigerian real estate deals on WhatsApp 24/7." },
+      {
+        property: "og:description",
+        content:
+          "NairaLens is the autonomous AI sales engine that qualifies leads, handles objections, and closes Nigerian real estate deals on WhatsApp 24/7.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:title", content: "NairaLens — AI Real Estate Sales Engine for Nigeria" },
-      { name: "twitter:description", content: "NairaLens is the autonomous AI sales engine that qualifies leads, handles objections, and closes Nigerian real estate deals on WhatsApp 24/7." },
+      {
+        name: "twitter:description",
+        content:
+          "NairaLens is the autonomous AI sales engine that qualifies leads, handles objections, and closes Nigerian real estate deals on WhatsApp 24/7.",
+      },
       { property: "og:image", content: "https://naira-lens-pro.lovable.app/og-image.jpg" },
       { property: "og:image:width", content: "1200" },
       { property: "og:image:height", content: "630" },
@@ -79,7 +101,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="dark">
-      <head><HeadContent /></head>
+      <head>
+        <HeadContent />
+      </head>
       <body>
         {children}
         <Scripts />

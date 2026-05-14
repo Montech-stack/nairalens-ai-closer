@@ -2,9 +2,7 @@ import { Link, Outlet, useRouterState, useNavigate, createFileRoute } from "@tan
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  LayoutDashboard, Database, Users, Megaphone, Brain, LogOut, Menu, X,
-} from "lucide-react";
+import { LayoutDashboard, Database, Users, Megaphone, Brain, LogOut, Menu, X } from "lucide-react";
 import { compactNaira } from "@/lib/format";
 import { Logo } from "@/components/logo";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -38,7 +36,9 @@ function AppLayout() {
     if (!loading && !user) navigate({ to: "/auth" });
   }, [loading, user, navigate]);
 
-  useEffect(() => { setMobileOpen(false); }, [pathname]);
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     if (!user) return;
@@ -54,7 +54,11 @@ function AppLayout() {
   }, [user, pathname]);
 
   if (loading || !user) {
-    return <div className="min-h-screen flex items-center justify-center bg-noir text-muted-foreground">Loading…</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-noir text-muted-foreground">
+        Loading…
+      </div>
+    );
   }
 
   const title = titles[pathname] || "NairaLens";
@@ -67,12 +71,17 @@ function AppLayout() {
         {navItems.map((it) => {
           const active = pathname.startsWith(it.to);
           return (
-            <Link key={it.to} to={it.to}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition ${active ? "bg-gold/15 text-gold border border-gold/30" : "text-muted-foreground hover:bg-noir-elevated hover:text-foreground"}`}>
+            <Link
+              key={it.to}
+              to={it.to}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition ${active ? "bg-gold/15 text-gold border border-gold/30" : "text-muted-foreground hover:bg-noir-elevated hover:text-foreground"}`}
+            >
               <it.icon className="w-4 h-4" />
               <span className="flex-1">{it.label}</span>
               {it.dynamic === "leads" && stats.leads > 0 && (
-                <span className="text-[10px] font-mono bg-noir-elevated px-1.5 py-0.5 rounded">{stats.leads}</span>
+                <span className="text-[10px] font-mono bg-noir-elevated px-1.5 py-0.5 rounded">
+                  {stats.leads}
+                </span>
               )}
             </Link>
           );
@@ -83,7 +92,13 @@ function AppLayout() {
           <span className="w-2 h-2 rounded-full bg-success pulse-gold" />
           <span className="font-mono text-success">AI BRAIN ACTIVE</span>
         </div>
-        <button onClick={() => { signOut(); navigate({ to: "/" }); }} className="flex items-center gap-2 text-xs text-muted-foreground hover:text-gold">
+        <button
+          onClick={() => {
+            signOut();
+            navigate({ to: "/" });
+          }}
+          className="flex items-center gap-2 text-xs text-muted-foreground hover:text-gold"
+        >
           <LogOut className="w-3 h-3" /> Sign out
         </button>
       </div>
@@ -105,10 +120,18 @@ function AppLayout() {
                   <Menu className="w-5 h-5" />
                 </button>
               </SheetTrigger>
-              <SheetContent side="left" className="bg-sidebar border-r border-border p-0 w-[260px] flex flex-col">
+              <SheetContent
+                side="left"
+                className="bg-sidebar border-r border-border p-0 w-[260px] flex flex-col"
+              >
                 <div className="flex items-center justify-between p-2 border-b border-border lg:hidden">
                   <span className="text-xs font-mono text-muted-foreground pl-3">MENU</span>
-                  <button onClick={() => setMobileOpen(false)} className="p-2 text-muted-foreground"><X className="w-4 h-4" /></button>
+                  <button
+                    onClick={() => setMobileOpen(false)}
+                    className="p-2 text-muted-foreground"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
                 {SidebarContent}
               </SheetContent>
@@ -119,7 +142,9 @@ function AppLayout() {
             {/* Single, focused metric — no clutter */}
             <div className="hidden sm:flex px-3 py-1.5 rounded-full glass border border-gold/20 items-center gap-2">
               <span className="font-mono text-[9px] text-muted-foreground">REVENUE</span>
-              <span className="font-mono text-sm text-gold">{compactNaira(stats.revenue || 0)}</span>
+              <span className="font-mono text-sm text-gold">
+                {compactNaira(stats.revenue || 0)}
+              </span>
             </div>
             <div className="px-2.5 py-1.5 rounded-full glass border border-gold/20 flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-success pulse-gold" />

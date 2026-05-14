@@ -86,14 +86,21 @@ function AuthPage() {
                       minLength={8}
                       className="pr-10"
                     />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
                 </div>
                 <button
                   type="button"
-                  onClick={() => { setMode("forgot"); setForgotSent(false); }}
+                  onClick={() => {
+                    setMode("forgot");
+                    setForgotSent(false);
+                  }}
                   className="text-xs text-muted-foreground hover:text-gold transition-colors text-left"
                 >
                   Forgot password?
@@ -159,11 +166,14 @@ function AuthPage() {
               </p>
               <p className="text-gold font-medium text-sm mb-4">{email}</p>
               <p className="text-sm text-muted-foreground mb-6">
-                Click the link in that email, then set your new password. Check
-                spam if it doesn't arrive.
+                Click the link in that email, then set your new password. Check spam if it doesn't
+                arrive.
               </p>
               <button
-                onClick={() => { setMode("signin"); setForgotSent(false); }}
+                onClick={() => {
+                  setMode("signin");
+                  setForgotSent(false);
+                }}
                 className="text-sm text-gold hover:underline"
               >
                 ← Back to sign in

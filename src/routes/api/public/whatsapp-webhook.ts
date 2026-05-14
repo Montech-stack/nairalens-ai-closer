@@ -1,5 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import {
+  sendWhatsAppTypingIndicator,
+  formatButtonMessage,
+  formatListMessage,
+} from "@/integrations/twilio";
 
 // ─────────────────────────────────────────────
 // PERSONA BASE IDENTITIES
@@ -77,8 +82,10 @@ Goal: Get a commitment — site visit date, document request, or deposit intent.
 // ─────────────────────────────────────────────
 function detectStage(messageCount: number): string {
   if (messageCount <= 4) return "STAGE 1 — QUALIFY: Focus on intent and budget. Do not pitch yet.";
-  if (messageCount <= 8) return "STAGE 2 — PAIN & TRUST: One pain point question max. Acknowledge and advance. Do not loop.";
-  if (messageCount <= 12) return "STAGE 3 — PRESENT: Offer one specific property option. Be concrete.";
+  if (messageCount <= 8)
+    return "STAGE 2 — PAIN & TRUST: One pain point question max. Acknowledge and advance. Do not loop.";
+  if (messageCount <= 12)
+    return "STAGE 3 — PRESENT: Offer one specific property option. Be concrete.";
   return "STAGE 4 — CLOSE: Drive toward site visit or deposit. Create urgency if needed.";
 }
 
@@ -87,35 +94,53 @@ function detectStage(messageCount: number): string {
 // ─────────────────────────────────────────────
 function calculateIntentScore(
   history: { role: string; message_text: string }[],
-  latestMessage: string
+  latestMessage: string,
 ): number {
-  const allText = [
-    ...history.map((m) => m.message_text),
-    latestMessage,
-  ]
-    .join(" ")
-    .toLowerCase();
+  const allText = [...history.map((m) => m.message_text), latestMessage].join(" ").toLowerCase();
 
   let score = 50; // baseline
 
   // Strong buying signals → push score up
   const highSignals = [
-    "ready to buy", "let's proceed", "how do i pay", "send account",
-    "i want to reserve", "inspection", "site visit", "when can i see",
-    "i'm interested", "send details", "send me the details", "what's the price",
-    "deposit", "how much", "payment plan", "i'll take it",
+    "ready to buy",
+    "let's proceed",
+    "how do i pay",
+    "send account",
+    "i want to reserve",
+    "inspection",
+    "site visit",
+    "when can i see",
+    "i'm interested",
+    "send details",
+    "send me the details",
+    "what's the price",
+    "deposit",
+    "how much",
+    "payment plan",
+    "i'll take it",
   ];
   const midSignals = [
-    "budget", "afford", "looking for", "i need", "my budget", "range",
-    "considering", "thinking about", "exploring",
+    "budget",
+    "afford",
+    "looking for",
+    "i need",
+    "my budget",
+    "range",
+    "considering",
+    "thinking about",
+    "exploring",
   ];
-  const lowSignals = [
-    "maybe", "not sure", "just browsing", "not ready", "later",
-  ];
+  const lowSignals = ["maybe", "not sure", "just browsing", "not ready", "later"];
 
-  highSignals.forEach((s) => { if (allText.includes(s)) score += 15; });
-  midSignals.forEach((s) => { if (allText.includes(s)) score += 7; });
-  lowSignals.forEach((s) => { if (allText.includes(s)) score -= 10; });
+  highSignals.forEach((s) => {
+    if (allText.includes(s)) score += 15;
+  });
+  midSignals.forEach((s) => {
+    if (allText.includes(s)) score += 7;
+  });
+  lowSignals.forEach((s) => {
+    if (allText.includes(s)) score -= 10;
+  });
 
   // Penalise for repeated "losing money" / fear loops (sign of disengagement)
   const loopPhrases = ["lose money", "lost money", "losing money"];
@@ -133,7 +158,7 @@ function calculateIntentScore(
 async function callProvider(
   provider: "groq" | "gemini",
   model: string,
-  messages: { role: string; content: string }[]
+  messages: { role: string; content: string }[],
 ): Promise<string | null> {
   if (provider === "groq") {
     const apiKey = process.env.GROQ_API_KEY;
@@ -156,7 +181,7 @@ async function callProvider(
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({ model, messages, max_tokens: 160, temperature: 0.7 }),
-    }
+    },
   );
   if (!response.ok) throw new Error(`Gemini ${response.status}: ${await response.text()}`);
   const data = await response.json();
@@ -244,31 +269,34 @@ async function sendWhatsApp(
   phoneNumberId: string,
   accessToken: string,
   to: string,
-  body: string
+  content: string | Record<string, unknown>,
 ) {
   console.log(`[wa-send] Attempting to send message to ${to.slice(0, -4)}**** via Graph API.`);
-  console.log(`[wa-send] Using Access Token ending in: ...${accessToken.slice(-6)}`);
 
-  const r = await fetch(
-    `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        messaging_product: "whatsapp",
-        to,
-        type: "text",
-        text: { body },
-      }),
-    }
-  );
+  const payload: Record<string, unknown> = {
+    messaging_product: "whatsapp",
+    to,
+  };
+
+  if (typeof content === "string") {
+    payload.type = "text";
+    payload.text = { body: content };
+  } else {
+    payload.type = "interactive";
+    payload.interactive = content;
+  }
+
+  const r = await fetch(`https://graph.facebook.com/v21.0/${phoneNumberId}/messages`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
   if (!r.ok) {
     const errorBody = await r.text();
     console.error(`[wa-send] FAILED with status ${r.status}:`, errorBody);
-    // Throw an error to ensure the calling function knows it failed
     throw new Error(`WhatsApp API Error: ${r.status} - ${errorBody}`);
   } else {
     console.log("[wa-send] Successfully sent message.");
@@ -338,8 +366,10 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
               const messages = value.messages ?? [];
 
               console.log(
-                "[wa-webhook] phone_number_id:", phoneNumberId,
-                "messages:", messages.length
+                "[wa-webhook] phone_number_id:",
+                phoneNumberId,
+                "messages:",
+                messages.length,
               );
 
               if (!phoneNumberId || messages.length === 0) continue;
@@ -354,7 +384,7 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
               console.log(
                 "[wa-webhook] integration:",
                 integ ? `found (user: ${integ.user_id})` : "NOT FOUND",
-                integErr?.message ?? ""
+                integErr?.message ?? "",
               );
               if (!integ) continue;
 
@@ -375,11 +405,21 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
 
               // ── Process each inbound message ──
               for (const msg of messages) {
-                if (msg.type !== "text") continue;
-
                 const fromPhone = msg.from as string;
-                const text = (msg.text?.body as string)?.trim();
                 const waMsgId = msg.id as string;
+                let text = "";
+
+                if (msg.type === "text") {
+                  text = (msg.text?.body as string)?.trim();
+                } else if (msg.type === "interactive") {
+                  const interactive = msg.interactive;
+                  if (interactive.type === "button_reply") {
+                    text = interactive.button_reply.title;
+                  } else if (interactive.type === "list_reply") {
+                    text = interactive.list_reply.title;
+                  }
+                }
+
                 if (!text) continue;
 
                 // ── Find or create lead ──
@@ -392,8 +432,7 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
 
                 if (!lead) {
                   const contactName =
-                    value.contacts?.[0]?.profile?.name ||
-                    `WA ${fromPhone.slice(-4)}`;
+                    value.contacts?.[0]?.profile?.name || `WA ${fromPhone.slice(-4)}`;
 
                   const { data: created } = await supabaseAdmin
                     .from("leads")
@@ -414,17 +453,24 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
                 if (!lead) continue;
 
                 // ── Dedupe: skip already-processed message IDs ──
-                const { error: insErr } = await supabaseAdmin
-                  .from("conversations")
-                  .insert({
-                    user_id: integ.user_id,
-                    lead_id: lead.id,
-                    role: "lead",
-                    message_text: text,
-                    wa_message_id: waMsgId,
-                  });
+                const { error: insErr } = await supabaseAdmin.from("conversations").insert({
+                  user_id: integ.user_id,
+                  lead_id: lead.id,
+                  role: "lead",
+                  message_text: text,
+                  wa_message_id: waMsgId,
+                });
 
                 if (insErr?.code === "23505") continue; // duplicate — skip
+
+                // ── Send typing indicator ──
+                if (integ.access_token && integ.phone_number_id) {
+                  await sendWhatsAppTypingIndicator(
+                    integ.access_token,
+                    integ.phone_number_id,
+                    fromPhone,
+                  );
+                }
 
                 // ── Update lead last touch ──
                 await supabaseAdmin
@@ -468,12 +514,7 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
 
                 // ── Send reply via WhatsApp Cloud API ──
                 if (integ.access_token && integ.phone_number_id) {
-                  await sendWhatsApp(
-                    integ.phone_number_id,
-                    integ.access_token,
-                    fromPhone,
-                    reply
-                  );
+                  await sendWhatsApp(integ.phone_number_id, integ.access_token, fromPhone, reply);
                 }
 
                 // ── Log AI reply to conversations ──
@@ -486,10 +527,7 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
                 });
 
                 // ── Update intent score based on conversation signals ──
-                const newIntentScore = calculateIntentScore(
-                  conversationHistory,
-                  text
-                );
+                const newIntentScore = calculateIntentScore(conversationHistory, text);
                 await supabaseAdmin
                   .from("leads")
                   .update({ intent_score: newIntentScore })

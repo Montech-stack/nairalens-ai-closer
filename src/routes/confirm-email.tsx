@@ -38,15 +38,11 @@ function ConfirmEmailPage() {
             <Mail className="w-7 h-7 text-gold" />
           </div>
           <h1 className="font-serif text-2xl mb-2">Check your inbox</h1>
-          <p className="text-muted-foreground text-sm mb-1">
-            We've sent a confirmation link to
-          </p>
-          {email && (
-            <p className="text-gold font-medium text-sm mb-4">{email}</p>
-          )}
+          <p className="text-muted-foreground text-sm mb-1">We've sent a confirmation link to</p>
+          {email && <p className="text-gold font-medium text-sm mb-4">{email}</p>}
           <p className="text-muted-foreground text-sm mb-7">
-            Click the link in that email to activate your account and continue
-            your setup. Check spam if it doesn't arrive within a minute.
+            Click the link in that email to activate your account and continue your setup. Check
+            spam if it doesn't arrive within a minute.
           </p>
           <div className="space-y-3">
             {email && (
