@@ -404,6 +404,7 @@ export default async function handler(request: Request): Promise<Response> {
     return twiml(reply);
   } catch (e: any) {
     console.error("[twilio-edge]", e?.message);
-    return twiml("Thank you for your message. I'll confirm the details and get back to you shortly.");
+    const diag = (e?.message ?? "unknown").toString().slice(0, 300);
+    return twiml(`⚠️ NairaLens AI error: ${diag}`);
   }
 }
