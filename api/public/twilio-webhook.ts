@@ -1,6 +1,45 @@
 export const config = { runtime: "edge" };
 
 // ─────────────────────────────────────────────────────────────────
+// TYPING INDICATOR HELPER
+// ─────────────────────────────────────────────────────────────────
+async function sendTypingIndicator(
+  from: string,
+  accountSid: string,
+  authToken: string
+): Promise<boolean> {
+  try {
+    const auth = btoa(`${accountSid}:${authToken}`);
+    const res = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${auth}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          To: `whatsapp:${from}`,
+          From: "whatsapp:+1415",
+          Body: " ", // Empty body with just space to trigger typing
+        }).toString(),
+      }
+    );
+    
+    if (!res.ok) {
+      console.warn(`[typing-indicator] Failed: ${res.status}`);
+      return false;
+    }
+    
+    console.log("[typing-indicator] Sent successfully");
+    return true;
+  } catch (e: any) {
+    console.warn(`[typing-indicator] Error: ${e.message}`);
+    return false;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
 // CORE DOCTRINE
 // ─────────────────────────────────────────────────────────────────
 const CORE_DOCTRINE = `
@@ -1221,6 +1260,8 @@ export default async function handler(request: Request): Promise<Response> {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
   const geminiKey = process.env.GEMINI_API_KEY!;
   const groqKey = process.env.GROQ_API_KEY;
+  const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
+  const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
 
   let from = "",
     body = "",
@@ -1241,6 +1282,12 @@ export default async function handler(request: Request): Promise<Response> {
   }
 
   if (!from || !body) return new Response("", { status: 200 });
+  
+  // ── Send typing indicator if credentials available ──────────
+  if (twilioAccountSid && twilioAuthToken) {
+    // Send in background without awaiting to keep response fast
+    sendTypingIndicator(from, twilioAccountSid, twilioAuthToken).catch(() => {});
+  }
 
   console.log(
     "[twilio-edge] from:",

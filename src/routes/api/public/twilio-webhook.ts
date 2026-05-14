@@ -1,6 +1,45 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
+// ─────────────────────────────────────────────
+// TYPING INDICATOR HELPER
+// ─────────────────────────────────────────────
+async function sendTypingIndicator(
+  from: string,
+  accountSid: string,
+  authToken: string
+): Promise<boolean> {
+  try {
+    const auth = btoa(`${accountSid}:${authToken}`);
+    const res = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${auth}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          To: `whatsapp:${from}`,
+          From: "whatsapp:+1415",
+          Body: " ",
+        }).toString(),
+      }
+    );
+    
+    if (!res.ok) {
+      console.warn(`[typing-indicator] Failed: ${res.status}`);
+      return false;
+    }
+    
+    console.log("[typing-indicator] Sent successfully");
+    return true;
+  } catch (e: any) {
+    console.warn(`[typing-indicator] Error: ${e.message}`);
+    return false;
+  }
+}
+
 const PERSONAS: Record<string, string> = {
   apex_closer:
     "You are the Apex Closer — Nigeria's sharpest real estate AI. Straight-Line persuasion, urgency engineering, zero hesitation. Reply on WhatsApp in 1-3 short, confident sentences.",
@@ -204,6 +243,9 @@ export const Route = createFileRoute("/api/public/twilio-webhook")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
+        const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
+        
         let from = "",
           body = "",
           to = "",
@@ -220,6 +262,11 @@ export const Route = createFileRoute("/api/public/twilio-webhook")({
         }
 
         if (!from || !body) return new Response("", { status: 200 });
+        
+        // ── Send typing indicator if credentials available ──────────
+        if (twilioAccountSid && twilioAuthToken) {
+          sendTypingIndicator(from, twilioAccountSid, twilioAuthToken).catch(() => {});
+        }
 
         try {
           // Look up integration by Twilio sandbox number (stored as business_phone)
