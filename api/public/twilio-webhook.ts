@@ -378,57 +378,142 @@ ABSOLUTE RULES
 // GREETING DETECTION HELPER (shared across functions)
 // ─────────────────────────────────────────────────────────────────
 const GREETING_WORDS = [
-  "hello", "hi", "hey", "good morning", "good afternoon",
-  "good evening", "start", "helo", "holla", "yo", "sup",
+  "hello",
+  "hi",
+  "hey",
+  "good morning",
+  "good afternoon",
+  "good evening",
+  "start",
+  "helo",
+  "holla",
+  "yo",
+  "sup",
 ];
 
 function isGreetingMessage(msg: string): boolean {
   const lower = msg.toLowerCase().trim();
-  return GREETING_WORDS.some(
-    (g) => lower === g || lower.startsWith(g + " ")
-  );
+  return GREETING_WORDS.some((g) => lower === g || lower.startsWith(g + " "));
 }
 
 // ─────────────────────────────────────────────────────────────────
 // BUYING SIGNAL DETECTOR
 // ─────────────────────────────────────────────────────────────────
 function detectBuyingSignal(
-  msg: string
+  msg: string,
 ): "strong_yes" | "deposit_confirmed" | "interest" | "objection" | "neutral" {
   const lower = msg.toLowerCase().trim();
 
   const depositConfirmed = [
-    "paid", "sent", "transferred", "done", "i've paid", "ive paid",
-    "payment made", "i paid", "just sent", "just transferred",
-    "transaction", "trf done", "transfer done", "payment done",
-    "receipt", "i've sent", "ive sent",
+    "paid",
+    "sent",
+    "transferred",
+    "done",
+    "i've paid",
+    "ive paid",
+    "payment made",
+    "i paid",
+    "just sent",
+    "just transferred",
+    "transaction",
+    "trf done",
+    "transfer done",
+    "payment done",
+    "receipt",
+    "i've sent",
+    "ive sent",
   ];
 
   const strongYes = [
-    "yes", "yeah", "yep", "yh", "y", "sure", "okay", "ok", "k",
-    "alright", "aight", "lets do it", "let's do it", "lets go",
-    "let's go", "go ahead", "sounds good", "that works", "i'm in",
-    "im in", "i want it", "i'll take it", "book me", "send details",
-    "send account", "send me details", "tell me more", "i'm interested",
-    "im interested", "interested", "i like that", "perfect", "great",
-    "proceed", "continue", "yes please", "how do i pay", "i'll pay",
-    "ill pay", "i want to pay", "account details", "account number",
-    "send account number", "i'm ready", "im ready", "ready",
+    "yes",
+    "yeah",
+    "yep",
+    "yh",
+    "y",
+    "sure",
+    "okay",
+    "ok",
+    "k",
+    "alright",
+    "aight",
+    "lets do it",
+    "let's do it",
+    "lets go",
+    "let's go",
+    "go ahead",
+    "sounds good",
+    "that works",
+    "i'm in",
+    "im in",
+    "i want it",
+    "i'll take it",
+    "book me",
+    "send details",
+    "send account",
+    "send me details",
+    "tell me more",
+    "i'm interested",
+    "im interested",
+    "interested",
+    "i like that",
+    "perfect",
+    "great",
+    "proceed",
+    "continue",
+    "yes please",
+    "how do i pay",
+    "i'll pay",
+    "ill pay",
+    "i want to pay",
+    "account details",
+    "account number",
+    "send account number",
+    "i'm ready",
+    "im ready",
+    "ready",
   ];
 
   const interestSignals = [
-    "how much", "what's the price", "price", "when can i see",
-    "site visit", "inspection", "deposit", "payment plan",
-    "how do i pay", "reserve", "reservation", "what's included",
-    "show me", "more details", "which location", "where is",
-    "title", "document", "c of o", "gazette",
+    "how much",
+    "what's the price",
+    "price",
+    "when can i see",
+    "site visit",
+    "inspection",
+    "deposit",
+    "payment plan",
+    "how do i pay",
+    "reserve",
+    "reservation",
+    "what's included",
+    "show me",
+    "more details",
+    "which location",
+    "where is",
+    "title",
+    "document",
+    "c of o",
+    "gazette",
   ];
 
   const objectionSignals = [
-    "expensive", "too much", "can't afford", "think about it",
-    "not sure", "maybe", "later", "partner", "spouse", "wife",
-    "husband", "let me check", "not ready", "need to see",
-    "other options", "looking elsewhere", "come back",
+    "expensive",
+    "too much",
+    "can't afford",
+    "think about it",
+    "not sure",
+    "maybe",
+    "later",
+    "partner",
+    "spouse",
+    "wife",
+    "husband",
+    "let me check",
+    "not ready",
+    "need to see",
+    "other options",
+    "looking elsewhere",
+    "come back",
   ];
 
   if (depositConfirmed.some((s) => lower.includes(s))) {
@@ -437,12 +522,7 @@ function detectBuyingSignal(
 
   if (
     strongYes.includes(lower) ||
-    strongYes.some(
-      (s) =>
-        lower === s ||
-        lower.startsWith(s + " ") ||
-        lower.endsWith(" " + s)
-    )
+    strongYes.some((s) => lower === s || lower.startsWith(s + " ") || lower.endsWith(" " + s))
   ) {
     return "strong_yes";
   }
@@ -459,14 +539,12 @@ function detectBuyingSignal(
 // ─────────────────────────────────────────────────────────────────
 function extractBudgetNumber(
   history: { role: string; message_text: string }[],
-  latestMsg: string
+  latestMsg: string,
 ): number {
   // Only scan LEAD/USER messages — AI messages contain property prices
   // and deposit amounts that must never be mistaken for the lead's budget.
   const leadMessagesOnly = [
-    ...history
-      .filter((h) => h.role === "lead" || h.role === "user")
-      .map((h) => h.message_text),
+    ...history.filter((h) => h.role === "lead" || h.role === "user").map((h) => h.message_text),
     latestMsg,
   ].join(" ");
 
@@ -486,15 +564,11 @@ function extractBudgetNumber(
 
   // Fallback: bare number ONLY if the IMMEDIATELY preceding AI message
   // asked for budget — not any AI message ever.
-  const lastAiMessage = [...history]
-    .reverse()
-    .find((h) => h.role === "ai");
+  const lastAiMessage = [...history].reverse().find((h) => h.role === "ai");
 
   const lastAiAskedBudget =
     lastAiMessage &&
-    /budget|range|working with|how much|what range/.test(
-      lastAiMessage.message_text.toLowerCase()
-    );
+    /budget|range|working with|how much|what range/.test(lastAiMessage.message_text.toLowerCase());
 
   if (lastAiAskedBudget) {
     // Accept ONLY a bare 1–4 digit number from the latest lead message
@@ -520,16 +594,13 @@ interface ConversationKnowledge {
   budgetAmount: number;
   closeAttempts: number;
   depositConfirmed: boolean;
-  presentationInProgress: boolean; // true once AI has presented a property + deposit ask
 }
 
 function extractKnowledge(
   history: { role: string; message_text: string }[],
-  latestMsg: string
+  latestMsg: string,
 ): ConversationKnowledge {
-  const allText = [...history.map((h) => h.message_text), latestMsg]
-    .join(" ")
-    .toLowerCase();
+  const allText = [...history.map((h) => h.message_text), latestMsg].join(" ").toLowerCase();
 
   const aiMessages = history
     .filter((h) => h.role === "ai")
@@ -552,15 +623,14 @@ function extractKnowledge(
     /\b(five|ten|fifteen|twenty|thirty|forty|fifty|hundred|two hundred)\s*(million)?\b/i,
   ];
 
-  const aiAskedForBudget =
-    /budget|range|working with|how much|what range/.test(aiMessages);
+  const aiAskedForBudget = /budget|range|working with|how much|what range/.test(aiMessages);
   const leadHasAnyNumber = /\b[1-9]\d{0,3}\b/.test(leadMessages);
   const hasBudgetInText = budgetRegexes.some((r) => r.test(leadMessages)); // FIX: scan leadMessages only, not allText
   const hasBudget = hasBudgetInText || (aiAskedForBudget && leadHasAnyNumber);
 
   const budgetConfirmedByAI =
     /budget of|working with|around ₦|you mentioned.*\d|looking at.*\d|invest.*₦|₦.*invest/.test(
-      aiMessages
+      aiMessages,
     );
 
   // ── Timeline ─────────────────────────────────────────────────
@@ -574,9 +644,7 @@ function extractKnowledge(
 
   const hasTimeline = timelineRegexes.some((r) => r.test(allText));
   const timelineConfirmedByAI =
-    /within|months|weeks|your timeline|looking to move|6.month|3.month/.test(
-      aiMessages
-    );
+    /within|months|weeks|your timeline|looking to move|6.month|3.month/.test(aiMessages);
 
   // ── Purpose ──────────────────────────────────────────────────
   const purposeRegexes = [
@@ -590,7 +658,7 @@ function extractKnowledge(
   const hasPurpose = purposeRegexes.some((r) => r.test(leadMessages)); // FIX: scan leadMessages only
   const purposeConfirmedByAI =
     /looking to flip|investment|personal home|develop|you want to|buy and flip|buy.*flip/.test(
-      aiMessages
+      aiMessages,
     );
 
   // ── Close attempts count ──────────────────────────────────────
@@ -601,41 +669,31 @@ function extractKnowledge(
         h.message_text.toLowerCase().includes("deposit") ||
         h.message_text.toLowerCase().includes("secure your slot") ||
         h.message_text.toLowerCase().includes("reserve") ||
-        h.message_text.toLowerCase().includes("shall i send"))
+        h.message_text.toLowerCase().includes("shall i send")),
   ).length;
 
   // ── Deposit confirmed ─────────────────────────────────────────
   const depositKeywords = [
-    "paid", "sent", "transferred", "done", "payment made",
-    "transaction", "receipt",
+    "paid",
+    "sent",
+    "transferred",
+    "done",
+    "payment made",
+    "transaction",
+    "receipt",
   ];
-  const depositConfirmed = history.some(
-    (h) =>
-      (h.role === "lead" || h.role === "user") &&
-      depositKeywords.some((k) => h.message_text.toLowerCase().includes(k))
-  ) || depositKeywords.some((k) => latestMsg.toLowerCase().includes(k));
+  const depositConfirmed =
+    history.some(
+      (h) =>
+        (h.role === "lead" || h.role === "user") &&
+        depositKeywords.some((k) => h.message_text.toLowerCase().includes(k)),
+    ) || depositKeywords.some((k) => latestMsg.toLowerCase().includes(k));
 
   const budgetAmount = extractBudgetNumber(history, latestMsg);
 
-  // ── Presentation in progress ──────────────────────────────────
-  // True when the AI has already named a specific property with a price
-  // AND asked for a deposit in the same message. Once this is true,
-  // budget checks are irrelevant — the close is already active.
-  const presentationInProgress =
-    closeAttempts >= 1 ||
-    history.some(
-      (h) =>
-        h.role === "ai" &&
-        /₦[\d,]+/.test(h.message_text) &&
-        /(shall i send|account details|secure.*today|deposit.*secures)/i.test(h.message_text)
-    );
-
-  // If presentation is in progress, treat budget as known to unblock close logic.
-  const hasBudgetFinal = hasBudget || budgetConfirmedByAI || presentationInProgress;
-
   return {
     hasPurpose,
-    hasBudget: hasBudgetFinal,
+    hasBudget,
     hasTimeline,
     budgetConfirmedByAI,
     timelineConfirmedByAI,
@@ -643,7 +701,6 @@ function extractKnowledge(
     budgetAmount,
     closeAttempts,
     depositConfirmed,
-    presentationInProgress,
   };
 }
 
@@ -660,7 +717,7 @@ function detectStage(
     size_sqm: number | null;
     price: number | null;
     title_type: string;
-  }[]
+  }[],
 ): string {
   const msgCount = history.length;
   const k = extractKnowledge(history, latestMsg);
@@ -723,7 +780,7 @@ Then end the message. No more pitching. No more questions. They said yes.`;
 
     if (budgetKnown && purposeKnown) {
       const hasAffordable = properties.some(
-        (p) => p.price !== null && p.price <= k.budgetAmount * 1.3
+        (p) => p.price !== null && p.price <= k.budgetAmount * 1.3,
       );
       if (hasAffordable) {
         return `STAGE 4 — CLOSE NOW — STRONG YES: The lead just said YES and you have their purpose and budget confirmed.
@@ -824,9 +881,7 @@ Do NOT ask for clarification. Accept it and move straight to Stage 3 — present
   if (budgetKnown && purposeKnown) {
     const hasAffordable =
       properties.length > 0 &&
-      properties.some(
-        (p) => p.price !== null && p.price <= k.budgetAmount * 1.3
-      );
+      properties.some((p) => p.price !== null && p.price <= k.budgetAmount * 1.3);
 
     if (!hasAffordable && properties.length > 0) {
       return `STAGE 3 — BUDGET BRIDGE + DEPOSIT: Their stated budget (₦${(k.budgetAmount / 1_000_000).toFixed(0)}M) does not exactly match current inventory prices.
@@ -872,41 +927,77 @@ Ask ONE question only. Then present immediately on their next reply.`;
 // ─────────────────────────────────────────────────────────────────
 function calculateIntentScore(
   history: { role: string; message_text: string }[],
-  latestMsg: string
+  latestMsg: string,
 ): number {
-  const allText = [...history.map((m) => m.message_text), latestMsg]
-    .join(" ")
-    .toLowerCase();
+  const allText = [...history.map((m) => m.message_text), latestMsg].join(" ").toLowerCase();
 
   let score = 50;
 
   const high = [
-    "ready", "reserve", "deposit", "book", "site visit", "inspection",
-    "how do i pay", "send account", "i want", "let's proceed", "go ahead",
-    "i'll take", "yes", "okay", "sure", "account details", "account number",
-    "i'm ready", "payment", "transfer", "paid",
+    "ready",
+    "reserve",
+    "deposit",
+    "book",
+    "site visit",
+    "inspection",
+    "how do i pay",
+    "send account",
+    "i want",
+    "let's proceed",
+    "go ahead",
+    "i'll take",
+    "yes",
+    "okay",
+    "sure",
+    "account details",
+    "account number",
+    "i'm ready",
+    "payment",
+    "transfer",
+    "paid",
   ];
   const mid = [
-    "budget", "afford", "interested", "considering", "price", "location",
-    "tell me more", "details", "how much", "payment plan", "installment",
+    "budget",
+    "afford",
+    "interested",
+    "considering",
+    "price",
+    "location",
+    "tell me more",
+    "details",
+    "how much",
+    "payment plan",
+    "installment",
   ];
   const low = [
-    "maybe", "not sure", "just browsing", "not ready", "later",
-    "thinking", "considering other",
+    "maybe",
+    "not sure",
+    "just browsing",
+    "not ready",
+    "later",
+    "thinking",
+    "considering other",
   ];
   const negative = [
-    "too expensive", "can't afford", "lose money", "lost money",
-    "not interested", "stop messaging",
+    "too expensive",
+    "can't afford",
+    "lose money",
+    "lost money",
+    "not interested",
+    "stop messaging",
   ];
 
-  high.forEach((s) => { if (allText.includes(s)) score += 12; });
-  mid.forEach((s) => { if (allText.includes(s)) score += 6; });
-  low.forEach((s) => { if (allText.includes(s)) score -= 8; });
+  high.forEach((s) => {
+    if (allText.includes(s)) score += 12;
+  });
+  mid.forEach((s) => {
+    if (allText.includes(s)) score += 6;
+  });
+  low.forEach((s) => {
+    if (allText.includes(s)) score -= 8;
+  });
 
-  const negCount = negative.reduce(
-    (acc, phrase) => acc + (allText.split(phrase).length - 1),
-    0
-  );
+  const negCount = negative.reduce((acc, phrase) => acc + (allText.split(phrase).length - 1), 0);
   if (negCount > 0) score -= negCount * 12;
 
   if (
@@ -962,7 +1053,7 @@ function buildSystemPrompt(opts: {
                   ? ` | Price: ₦${Number(p.price).toLocaleString()} | Deposit to secure: ₦${Math.round(Number(p.price) * 0.1).toLocaleString()} (10% holds the slot)`
                   : " | Price: on request"
               }` +
-              ` | Title: ${p.title_type}`
+              ` | Title: ${p.title_type}`,
           )
           .join("\n") +
         `\n\nDEFAULT DEPOSIT: If no specific deposit amount is configured, use 10% of the property price as the deposit figure. Always state the deposit amount explicitly in your close — never say "a small deposit" without a number.`
@@ -1003,9 +1094,7 @@ Collect their details and keep them warm.`;
     opts.priceObj
       ? `CUSTOM PRICE OBJECTION SCRIPT (use this when they say price is too high): ${opts.priceObj}`
       : "",
-    opts.cta
-      ? `CUSTOM SITE VISIT CTA (use when they want to see the property): ${opts.cta}`
-      : "",
+    opts.cta ? `CUSTOM SITE VISIT CTA (use when they want to see the property): ${opts.cta}` : "",
     opts.triggers
       ? `CLOSING TRIGGERS — if lead says any of these, go directly to deposit ask: ${opts.triggers}`
       : "",
@@ -1042,7 +1131,7 @@ interface ProviderConfig {
 
 async function callLLM(
   provider: ProviderConfig,
-  messages: { role: string; content: string }[]
+  messages: { role: string; content: string }[],
 ): Promise<string> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 9000);
@@ -1064,9 +1153,7 @@ async function callLLM(
     });
 
     if (!res.ok) {
-      throw new Error(
-        `${provider.name} HTTP ${res.status}: ${await res.text()}`
-      );
+      throw new Error(`${provider.name} HTTP ${res.status}: ${await res.text()}`);
     }
 
     const data = await res.json();
@@ -1103,12 +1190,7 @@ async function generateAIReply(opts: {
   priceObj?: string;
 }): Promise<string> {
   const signal = detectBuyingSignal(opts.userMsg);
-  const stageInstruction = detectStage(
-    opts.history,
-    opts.userMsg,
-    signal,
-    opts.properties
-  );
+  const stageInstruction = detectStage(opts.history, opts.userMsg, signal, opts.properties);
   const knowledge = extractKnowledge(opts.history, opts.userMsg);
 
   const systemPrompt = buildSystemPrompt({
@@ -1192,9 +1274,7 @@ async function generateAIReply(opts: {
 
   for (const provider of providers) {
     try {
-      console.log(
-        `[ai-cascade] Trying: ${provider.name} — ${provider.model}`
-      );
+      console.log(`[ai-cascade] Trying: ${provider.name} — ${provider.model}`);
       const reply = await callLLM(provider, messages);
       console.log(`[ai-cascade] Success via ${provider.name}`);
       return reply;
@@ -1216,13 +1296,10 @@ async function generateAIReply(opts: {
 // TWILIO TWIML HELPER
 // ─────────────────────────────────────────────────────────────────
 function twiml(message: string): Response {
-  const safe = message
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  const safe = message.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   return new Response(
     `<?xml version="1.0" encoding="UTF-8"?><Response><Message>${safe}</Message></Response>`,
-    { status: 200, headers: { "Content-Type": "text/xml" } }
+    { status: 200, headers: { "Content-Type": "text/xml" } },
   );
 }
 
@@ -1233,7 +1310,7 @@ async function sbFetch(
   supabaseUrl: string,
   serviceKey: string,
   path: string,
-  opts: RequestInit = {}
+  opts: RequestInit = {},
 ) {
   const res = await fetch(`${supabaseUrl}/rest/v1${path}`, {
     ...opts,
@@ -1294,63 +1371,47 @@ export default async function handler(request: Request): Promise<Response> {
     sendTypingIndicator(from, to, twilioAccountSid, twilioAuthToken).catch(() => {});
   }
 
-  console.log(
-    "[twilio-edge] from:",
-    from,
-    "to:",
-    to,
-    "body:",
-    body.slice(0, 80)
-  );
+  console.log("[twilio-edge] from:", from, "to:", to, "body:", body.slice(0, 80));
 
   try {
     // ── Find the WhatsApp integration ─────────────────────────
     const integRows = await sbFetch(
       supabaseUrl,
       serviceKey,
-      `/whatsapp_integrations?business_phone=eq.${encodeURIComponent(to)}&limit=1`
+      `/whatsapp_integrations?business_phone=eq.${encodeURIComponent(to)}&limit=1`,
     );
     const integ = Array.isArray(integRows) ? integRows[0] : null;
 
     console.log(
       "[twilio-edge] integration:",
-      integ ? `found (user: ${integ.user_id})` : "NOT FOUND"
+      integ ? `found (user: ${integ.user_id})` : "NOT FOUND",
     );
-    if (!integ)
-      return twiml(
-        "This number is not configured. Please contact support."
-      );
+    if (!integ) return twiml("This number is not configured. Please contact support.");
 
     // ── Fetch profile, tags, available properties in parallel ─
     const [profileRows, tagRows, propertyRows] = await Promise.all([
+      sbFetch(supabaseUrl, serviceKey, `/profiles?user_id=eq.${integ.user_id}&limit=1`),
       sbFetch(
         supabaseUrl,
         serviceKey,
-        `/profiles?user_id=eq.${integ.user_id}&limit=1`
+        `/market_tags?user_id=eq.${integ.user_id}&select=tag_text&limit=10`,
       ),
       sbFetch(
         supabaseUrl,
         serviceKey,
-        `/market_tags?user_id=eq.${integ.user_id}&select=tag_text&limit=10`
-      ),
-      sbFetch(
-        supabaseUrl,
-        serviceKey,
-        `/properties?user_id=eq.${integ.user_id}&status=eq.available&select=name,location,size_sqm,price,title_type&limit=10`
+        `/properties?user_id=eq.${integ.user_id}&status=eq.available&select=name,location,size_sqm,price,title_type&limit=10`,
       ),
     ]);
 
     const profile = Array.isArray(profileRows) ? profileRows[0] : null;
-    const marketTags = Array.isArray(tagRows)
-      ? tagRows.map((t: any) => t.tag_text)
-      : [];
+    const marketTags = Array.isArray(tagRows) ? tagRows.map((t: any) => t.tag_text) : [];
     const properties = Array.isArray(propertyRows) ? propertyRows : [];
 
     // ── Find or create lead ───────────────────────────────────
     const leadRows = await sbFetch(
       supabaseUrl,
       serviceKey,
-      `/leads?user_id=eq.${integ.user_id}&phone=eq.${encodeURIComponent(from)}&limit=1`
+      `/leads?user_id=eq.${integ.user_id}&phone=eq.${encodeURIComponent(from)}&limit=1`,
     );
     let lead = Array.isArray(leadRows) ? leadRows[0] : null;
     const isNewLead = !lead; // Track if this is a brand new lead
@@ -1370,22 +1431,14 @@ export default async function handler(request: Request): Promise<Response> {
       });
       lead = Array.isArray(created) ? created[0] : created;
     } else if (profileName && lead.name?.startsWith("WA ")) {
-      await sbFetch(
-        supabaseUrl,
-        serviceKey,
-        `/leads?id=eq.${lead.id}`,
-        {
-          method: "PATCH",
-          body: JSON.stringify({ name: profileName }),
-        }
-      );
+      await sbFetch(supabaseUrl, serviceKey, `/leads?id=eq.${lead.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ name: profileName }),
+      });
       lead.name = profileName;
     }
 
-    if (!lead)
-      return twiml(
-        "Unable to create your profile. Please try again."
-      );
+    if (!lead) return twiml("Unable to create your profile. Please try again.");
 
     // ── Save inbound lead message ─────────────────────────────
     await sbFetch(supabaseUrl, serviceKey, `/conversations`, {
@@ -1400,17 +1453,12 @@ export default async function handler(request: Request): Promise<Response> {
       }),
     });
 
-    await sbFetch(
-      supabaseUrl,
-      serviceKey,
-      `/leads?id=eq.${lead.id}`,
-      {
-        method: "PATCH",
-        body: JSON.stringify({
-          last_touch_at: new Date().toISOString(),
-        }),
-      }
-    );
+    await sbFetch(supabaseUrl, serviceKey, `/leads?id=eq.${lead.id}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        last_touch_at: new Date().toISOString(),
+      }),
+    });
 
     // ── Respect manual override / AI paused flag ──────────────
     if (lead.ai_paused) return new Response("", { status: 200 });
@@ -1419,29 +1467,42 @@ export default async function handler(request: Request): Promise<Response> {
     const historyRows = await sbFetch(
       supabaseUrl,
       serviceKey,
-      `/conversations?lead_id=eq.${lead.id}&select=role,message_text,created_at&order=created_at.asc&limit=20`
+      `/conversations?lead_id=eq.${lead.id}&select=role,message_text,created_at&order=created_at.asc&limit=20`,
     );
-    const history: { role: string; message_text: string; created_at?: string }[] =
-      Array.isArray(historyRows) ? historyRows : [];
+    const history: { role: string; message_text: string; created_at?: string }[] = Array.isArray(
+      historyRows,
+    )
+      ? historyRows
+      : [];
 
     // ── FIX 1: SESSION RESET — treat greeting after gap as fresh start ──
     // If the lead sends a greeting and their last AI interaction was
     // more than 6 hours ago, pass an empty history to the AI.
     // This prevents stale budget/purpose data from polluting a new session.
     const FRESH_START_TRIGGERS = [
-      "hello", "hi", "hey", "good morning", "good afternoon",
-      "good evening", "start", "helo", "holla", "yo", "sup",
+      "hello",
+      "hi",
+      "hey",
+      "good morning",
+      "good afternoon",
+      "good evening",
+      "start",
+      "helo",
+      "holla",
+      "yo",
+      "sup",
     ];
     const isGreeting = FRESH_START_TRIGGERS.some(
       (t) =>
         body.toLowerCase().trim() === t ||
-        body.toLowerCase().trim().startsWith(t + " ")
+        body
+          .toLowerCase()
+          .trim()
+          .startsWith(t + " "),
     );
 
     const lastAiEntry = [...history].reverse().find((h) => h.role === "ai");
-    const lastAiTime = lastAiEntry?.created_at
-      ? new Date(lastAiEntry.created_at).getTime()
-      : 0;
+    const lastAiTime = lastAiEntry?.created_at ? new Date(lastAiEntry.created_at).getTime() : 0;
     const hoursSinceLastContact =
       lastAiTime > 0 ? (Date.now() - lastAiTime) / (1000 * 60 * 60) : 999;
 
@@ -1453,7 +1514,7 @@ export default async function handler(request: Request): Promise<Response> {
 
     if (isFreshSession) {
       console.log(
-        `[session-reset] Greeting detected after ${hoursSinceLastContact.toFixed(1)}h gap — resetting AI context for lead ${lead.id}`
+        `[session-reset] Greeting detected after ${hoursSinceLastContact.toFixed(1)}h gap — resetting AI context for lead ${lead.id}`,
       );
     }
 
@@ -1483,23 +1544,18 @@ export default async function handler(request: Request): Promise<Response> {
       signal === "deposit_confirmed"
         ? "deposited"
         : newIntentScore >= 80
-        ? "hot"
-        : newIntentScore >= 55
-        ? "warm"
-        : "cold";
+          ? "hot"
+          : newIntentScore >= 55
+            ? "warm"
+            : "cold";
 
-    await sbFetch(
-      supabaseUrl,
-      serviceKey,
-      `/leads?id=eq.${lead.id}`,
-      {
-        method: "PATCH",
-        body: JSON.stringify({
-          intent_score: newIntentScore,
-          stage: newStage,
-        }),
-      }
-    );
+    await sbFetch(supabaseUrl, serviceKey, `/leads?id=eq.${lead.id}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        intent_score: newIntentScore,
+        stage: newStage,
+      }),
+    });
 
     // ── Save AI reply to conversations ────────────────────────
     const knowledgeForAnnotation = extractKnowledge(historyForAI, body);
@@ -1516,24 +1572,19 @@ export default async function handler(request: Request): Promise<Response> {
     });
 
     // ── Update integration last event ─────────────────────────
-    await sbFetch(
-      supabaseUrl,
-      serviceKey,
-      `/whatsapp_integrations?id=eq.${integ.id}`,
-      {
-        method: "PATCH",
-        body: JSON.stringify({
-          last_event_at: new Date().toISOString(),
-          status: "connected",
-        }),
-      }
-    );
+    await sbFetch(supabaseUrl, serviceKey, `/whatsapp_integrations?id=eq.${integ.id}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        last_event_at: new Date().toISOString(),
+        status: "connected",
+      }),
+    });
 
     return twiml(reply);
   } catch (e: any) {
     console.error("[twilio-edge] Unhandled error:", e?.message);
     return twiml(
-      "Bear with me one moment — I'll confirm the details and get right back to you. 🙏"
+      "Bear with me one moment — I'll confirm the details and get right back to you. 🙏",
     );
   }
 }
