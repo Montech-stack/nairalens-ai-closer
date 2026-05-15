@@ -1,6 +1,25 @@
 export const config = { runtime: "edge" };
 
 // ─────────────────────────────────────────────────────────────────
+// IMPORTS & QUALIFICATION FLOW
+// ─────────────────────────────────────────────────────────────────
+function startPropertyQualification(toPhone: string): Record<string, unknown> {
+  console.log(`[qualification] Starting property qualification for: ${toPhone}`);
+  
+  return {
+    type: "button",
+    body: { text: "Which area are you currently interested in?" },
+    action: {
+      buttons: [
+        { type: "reply", reply: { id: "btn_0", title: "Abuja" } },
+        { type: "reply", reply: { id: "btn_1", title: "Lagos" } },
+        { type: "reply", reply: { id: "btn_2", title: "Other" } },
+      ],
+    },
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────
 // TYPING INDICATOR HELPER
 // Twilio WhatsApp may handle typing indicators automatically based on
 // message latency. If manual trigger is needed, use this function.
@@ -1334,6 +1353,7 @@ export default async function handler(request: Request): Promise<Response> {
       `/leads?user_id=eq.${integ.user_id}&phone=eq.${encodeURIComponent(from)}&limit=1`
     );
     let lead = Array.isArray(leadRows) ? leadRows[0] : null;
+    const isNewLead = !lead; // Track if this is a brand new lead
 
     if (!lead) {
       const created = await sbFetch(supabaseUrl, serviceKey, `/leads`, {
