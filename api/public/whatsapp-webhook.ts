@@ -168,8 +168,9 @@ async function generateAIReply(opts: {
     { role: "user", content: opts.userMsg },
   ];
 
-  // Determine which API to use based on model
-  const isGroqModel = model.includes("llama") || model.startsWith("mixtral");
+  // Strip provider prefix if present (groq/model-name → model-name, google/model → model)
+  const cleanModel = model.replace(/^(groq|google)\//, "");
+  const isGroqModel = cleanModel.includes("llama") || cleanModel.startsWith("mixtral");
   const shouldTryGroqFirst = isGroqModel && opts.groqKey;
 
   // Try primary model first, then fallback
@@ -182,7 +183,7 @@ async function generateAIReply(opts: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model,
+          model: cleanModel,
           messages,
           temperature: 0.7,
           max_tokens: 500,
@@ -394,13 +395,10 @@ export default async function handler(request: Request): Promise<Response> {
             });
           } catch (e: any) {
             console.error("[wa-ai]", e.message);
-            continue;
+            reply = "Thank you for reaching out. I'll get back to you with the details shortly.";
           }
 
-          if (integ.access_token && integ.phone_number_id) {
-            await sendWhatsApp(integ.phone_number_id, integ.access_token, fromPhone, reply);
-          }
-
+          // Log AI reply to DB first — always, even if send fails
           await sbFetch(supabaseUrl, serviceKey, `/conversations`, {
             method: "POST",
             headers: { Prefer: "return=minimal" },
@@ -412,6 +410,10 @@ export default async function handler(request: Request): Promise<Response> {
               annotation: "↳ AI auto-reply (WhatsApp Cloud API)",
             }),
           });
+
+          if (integ.access_token && integ.phone_number_id) {
+            await sendWhatsApp(integ.phone_number_id, integ.access_token, fromPhone, reply);
+          }
         }
 
         await sbFetch(supabaseUrl, serviceKey, `/whatsapp_integrations?id=eq.${integ.id}`, {
