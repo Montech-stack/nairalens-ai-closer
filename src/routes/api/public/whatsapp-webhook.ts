@@ -1,10 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import {
-  sendWhatsAppTypingIndicator,
-  formatButtonMessage,
-  formatListMessage,
-} from "@/integrations/twilio";
 
 // ─────────────────────────────────────────────
 // PERSONA BASE IDENTITIES
@@ -463,31 +458,11 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
 
                 if (insErr?.code === "23505") continue; // duplicate — skip
 
-                // ── Send typing indicator ──
-                if (integ.access_token && integ.phone_number_id) {
-                  await sendWhatsAppTypingIndicator(
-                    integ.access_token,
-                    integ.phone_number_id,
-                    fromPhone,
-                  );
-                }
-
-                // ── Update lead last touch (always) ──
+                // ── Update lead last touch ──
                 await supabaseAdmin
                   .from("leads")
                   .update({ last_touch_at: new Date().toISOString() })
                   .eq("id", lead.id);
-
-                // ── Reset follow-up count since lead replied (requires migration) ──
-                supabaseAdmin
-                  .from("leads")
-                  .update({ followup_count: 0 })
-                  .eq("id", lead.id)
-                  .then(({ error }) => {
-                    if (error && error.code !== "42703") {
-                      console.warn("[wa-webhook] followup_count reset failed:", error.message);
-                    }
-                  });
 
                 // ── Skip if agent has paused AI for this lead ──
                 if (lead.ai_paused) continue;
@@ -501,15 +476,6 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
                   .limit(30);
 
                 const conversationHistory = history ?? [];
-
-                // ── DIAGNOSTIC: checkpoint before AI call ──
-                await supabaseAdmin.from("conversations").insert({
-                  user_id: integ.user_id,
-                  lead_id: lead.id,
-                  role: "ai",
-                  message_text: "[CHECKPOINT] reached AI generation step",
-                  annotation: "↳ DEBUG checkpoint",
-                });
 
                 // ── Generate AI reply ──
                 let reply = "";
