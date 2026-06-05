@@ -502,6 +502,15 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
 
                 const conversationHistory = history ?? [];
 
+                // ── DIAGNOSTIC: checkpoint before AI call ──
+                await supabaseAdmin.from("conversations").insert({
+                  user_id: integ.user_id,
+                  lead_id: lead.id,
+                  role: "ai",
+                  message_text: "[CHECKPOINT] reached AI generation step",
+                  annotation: "↳ DEBUG checkpoint",
+                });
+
                 // ── Generate AI reply ──
                 let reply = "";
                 try {
