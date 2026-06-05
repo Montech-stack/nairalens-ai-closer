@@ -293,6 +293,7 @@ function LeadDetailOverlay({ lead, onClose }: { lead: any; onClose: () => void }
   const [convo, setConvo] = useState<any[]>([]);
   const [draft, setDraft] = useState("");
   const [paused, setPaused] = useState(lead.ai_paused);
+  const [followingUp, setFollowingUp] = useState(false);
 
   const load = async () => {
     const { data } = await supabase
@@ -317,6 +318,32 @@ function LeadDetailOverlay({ lead, onClose }: { lead: any; onClose: () => void }
     });
     setDraft("");
     load();
+  };
+
+  const triggerFollowUp = async () => {
+    if (followingUp) return;
+    setFollowingUp(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { toast.error("Not authenticated"); return; }
+      const res = await fetch("/api/private/manual-followup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ lead_id: lead.id }),
+      });
+      if (res.ok) {
+        toast.success("Follow-up sent via WhatsApp.");
+        load();
+      } else {
+        const { error } = await res.json().catch(() => ({ error: "Unknown error" }));
+        toast.error(error || "Failed to send follow-up.");
+      }
+    } finally {
+      setFollowingUp(false);
+    }
   };
 
   const toggleControl = async () => {
@@ -439,9 +466,15 @@ function LeadDetailOverlay({ lead, onClose }: { lead: any; onClose: () => void }
               title="Risk Signals"
               body={lead.risk_signals || "None detected."}
             />
+            <DataRow l="Follow-ups sent" v={String(lead.followup_count ?? 0)} />
             <div className="grid grid-cols-2 gap-2 pt-2">
-              <Button className="bg-gold text-noir hover:bg-gold/90">
-                <Send className="w-4 h-4 mr-1" /> Follow-up
+              <Button
+                onClick={triggerFollowUp}
+                disabled={followingUp}
+                className="bg-gold text-noir hover:bg-gold/90"
+              >
+                <Send className="w-4 h-4 mr-1" />
+                {followingUp ? "Sending…" : "Follow-up"}
               </Button>
               <Button variant="outline">
                 <Calendar className="w-4 h-4 mr-1" /> Site Visit

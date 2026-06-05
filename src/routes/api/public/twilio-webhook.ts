@@ -314,10 +314,21 @@ export const Route = createFileRoute("/api/public/twilio-webhook")({
           });
           if (insErr?.code === "23505") return new Response("", { status: 200 });
 
+          // Always update last_touch_at; reset followup_count separately (requires migration)
           await supabaseAdmin
             .from("leads")
             .update({ last_touch_at: new Date().toISOString() })
             .eq("id", lead.id);
+
+          supabaseAdmin
+            .from("leads")
+            .update({ followup_count: 0 })
+            .eq("id", lead.id)
+            .then(({ error }) => {
+              if (error && error.code !== "42703") {
+                console.warn("[twilio-webhook] followup_count reset failed:", error.message);
+              }
+            });
 
           if (lead.ai_paused) return new Response("", { status: 200 });
 

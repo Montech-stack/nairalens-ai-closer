@@ -472,11 +472,22 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
                   );
                 }
 
-                // ── Update lead last touch ──
+                // ── Update lead last touch (always) ──
                 await supabaseAdmin
                   .from("leads")
                   .update({ last_touch_at: new Date().toISOString() })
                   .eq("id", lead.id);
+
+                // ── Reset follow-up count since lead replied (requires migration) ──
+                supabaseAdmin
+                  .from("leads")
+                  .update({ followup_count: 0 })
+                  .eq("id", lead.id)
+                  .then(({ error }) => {
+                    if (error && error.code !== "42703") {
+                      console.warn("[wa-webhook] followup_count reset failed:", error.message);
+                    }
+                  });
 
                 // ── Skip if agent has paused AI for this lead ──
                 if (lead.ai_paused) continue;
@@ -513,17 +524,25 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
                 }
 
                 // ── Send reply via WhatsApp Cloud API ──
+                let sendError: string | null = null;
                 if (integ.access_token && integ.phone_number_id) {
-                  await sendWhatsApp(integ.phone_number_id, integ.access_token, fromPhone, reply);
+                  try {
+                    await sendWhatsApp(integ.phone_number_id, integ.access_token, fromPhone, reply);
+                  } catch (e: any) {
+                    sendError = e.message;
+                    console.error("[wa-send] FAILED:", e.message);
+                  }
                 }
 
-                // ── Log AI reply to conversations ──
+                // ── Log AI reply to conversations (always, even if send failed) ──
                 await supabaseAdmin.from("conversations").insert({
                   user_id: integ.user_id,
                   lead_id: lead.id,
                   role: "ai",
                   message_text: reply,
-                  annotation: "↳ AI auto-reply (WhatsApp Cloud API)",
+                  annotation: sendError
+                    ? `↳ AI auto-reply (SEND FAILED: ${sendError.slice(0, 120)})`
+                    : "↳ AI auto-reply (WhatsApp Cloud API)",
                 });
 
                 // ── Update intent score based on conversation signals ──

@@ -24,6 +24,8 @@ import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppCampaignsRouteImport } from './routes/_app/campaigns'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp-webhook'
 import { Route as ApiPublicTwilioWebhookRouteImport } from './routes/api/public/twilio-webhook'
+import { Route as ApiPublicFollowupTriggerRouteImport } from './routes/api/public/followup-trigger'
+import { Route as ApiPrivateManualFollowupRouteImport } from './routes/api/private/manual-followup'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -100,6 +102,16 @@ const ApiPublicTwilioWebhookRoute = ApiPublicTwilioWebhookRouteImport.update({
   path: '/api/public/twilio-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicFollowupTriggerRoute = ApiPublicFollowupTriggerRouteImport.update({
+  id: '/api/public/followup-trigger',
+  path: '/api/public/followup-trigger',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPrivateManualFollowupRoute = ApiPrivateManualFollowupRouteImport.update({
+  id: '/api/private/manual-followup',
+  path: '/api/private/manual-followup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -116,6 +128,8 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AppSettingsRoute
   '/api/public/twilio-webhook': typeof ApiPublicTwilioWebhookRoute
   '/api/public/whatsapp-webhook': typeof ApiPublicWhatsappWebhookRoute
+  '/api/public/followup-trigger': typeof ApiPublicFollowupTriggerRoute
+  '/api/private/manual-followup': typeof ApiPrivateManualFollowupRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -132,6 +146,8 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsRoute
   '/api/public/twilio-webhook': typeof ApiPublicTwilioWebhookRoute
   '/api/public/whatsapp-webhook': typeof ApiPublicWhatsappWebhookRoute
+  '/api/public/followup-trigger': typeof ApiPublicFollowupTriggerRoute
+  '/api/private/manual-followup': typeof ApiPrivateManualFollowupRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -150,6 +166,8 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRoute
   '/api/public/twilio-webhook': typeof ApiPublicTwilioWebhookRoute
   '/api/public/whatsapp-webhook': typeof ApiPublicWhatsappWebhookRoute
+  '/api/public/followup-trigger': typeof ApiPublicFollowupTriggerRoute
+  '/api/private/manual-followup': typeof ApiPrivateManualFollowupRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -168,6 +186,8 @@ export interface FileRouteTypes {
     | '/settings'
     | '/api/public/twilio-webhook'
     | '/api/public/whatsapp-webhook'
+    | '/api/public/followup-trigger'
+    | '/api/private/manual-followup'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -184,6 +204,8 @@ export interface FileRouteTypes {
     | '/settings'
     | '/api/public/twilio-webhook'
     | '/api/public/whatsapp-webhook'
+    | '/api/public/followup-trigger'
+    | '/api/private/manual-followup'
   id:
     | '__root__'
     | '/'
@@ -201,6 +223,8 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/api/public/twilio-webhook'
     | '/api/public/whatsapp-webhook'
+    | '/api/public/followup-trigger'
+    | '/api/private/manual-followup'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -214,6 +238,8 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   ApiPublicTwilioWebhookRoute: typeof ApiPublicTwilioWebhookRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
+  ApiPublicFollowupTriggerRoute: typeof ApiPublicFollowupTriggerRoute
+  ApiPrivateManualFollowupRoute: typeof ApiPrivateManualFollowupRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -323,6 +349,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicTwilioWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/followup-trigger': {
+      id: '/api/public/followup-trigger'
+      path: '/api/public/followup-trigger'
+      fullPath: '/api/public/followup-trigger'
+      preLoaderRoute: typeof ApiPublicFollowupTriggerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/private/manual-followup': {
+      id: '/api/private/manual-followup'
+      path: '/api/private/manual-followup'
+      fullPath: '/api/private/manual-followup'
+      preLoaderRoute: typeof ApiPrivateManualFollowupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -355,6 +395,8 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   ApiPublicTwilioWebhookRoute: ApiPublicTwilioWebhookRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
+  ApiPublicFollowupTriggerRoute: ApiPublicFollowupTriggerRoute,
+  ApiPrivateManualFollowupRoute: ApiPrivateManualFollowupRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

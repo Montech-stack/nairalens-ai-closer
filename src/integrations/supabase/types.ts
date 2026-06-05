@@ -99,6 +99,7 @@ export type Database = {
           created_at: string | null;
           current_objective: string | null;
           current_strategy: string | null;
+          followup_count: number;
           id: string;
           intent_score: number | null;
           last_touch_at: string | null;
@@ -121,6 +122,7 @@ export type Database = {
           created_at?: string | null;
           current_objective?: string | null;
           current_strategy?: string | null;
+          followup_count?: number;
           id?: string;
           intent_score?: number | null;
           last_touch_at?: string | null;
@@ -143,6 +145,7 @@ export type Database = {
           created_at?: string | null;
           current_objective?: string | null;
           current_strategy?: string | null;
+          followup_count?: number;
           id?: string;
           intent_score?: number | null;
           last_touch_at?: string | null;
