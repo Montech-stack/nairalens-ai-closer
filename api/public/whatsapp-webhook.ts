@@ -256,6 +256,143 @@ async function sendWhatsAppList(
   return r.ok;
 }
 
+// ─── CONVERSATION INTELLIGENCE ──────────────────────────────────────────────
+
+// Extract structured facts from raw conversation history and inject as context.
+// This prevents ARIA from re-asking questions the lead already answered.
+function extractConversationContext(history: { role: string; message_text: string }[]): string {
+  if (!history.length) return "";
+  const leadText = history
+    .filter((h) => h.role === "lead")
+    .map((h) => h.message_text)
+    .join(" ")
+    .toLowerCase();
+
+  const facts: string[] = [];
+
+  if (/personal home|live.*there|own home|family home|residential/i.test(leadText))
+    facts.push("Intent: buying a personal/residential home");
+  else if (/invest|rental|yield|returns|portfolio|buy.to.let/i.test(leadText))
+    facts.push("Intent: investment property");
+  else if (/develop|flip|build|commercial|land|plot/i.test(leadText))
+    facts.push("Intent: land or development");
+
+  // Budget — from list selection or free text
+  if (/under ₦5m|below ₦5m/i.test(leadText)) facts.push("Budget: under ₦5M");
+  else if (/₦5m.*₦15m|5.*15.*million/i.test(leadText)) facts.push("Budget: ₦5M–₦15M");
+  else if (/₦15m.*₦30m|15.*30.*million/i.test(leadText)) facts.push("Budget: ₦15M–₦30M");
+  else if (/₦30m.*₦60m|30.*60.*million/i.test(leadText)) facts.push("Budget: ₦30M–₦60M");
+  else if (/₦60m.*₦150m|60.*150.*million/i.test(leadText)) facts.push("Budget: ₦60M–₦150M");
+  else if (/above ₦150m|above 150|over 150/i.test(leadText)) facts.push("Budget: above ₦150M");
+  else {
+    const m = leadText.match(/(?:₦|naira)?\s*(\d+(?:\.\d+)?)\s*(?:m\b|million)/i);
+    if (m) facts.push(`Budget mentioned: ₦${m[1]}M range`);
+  }
+
+  // Timeline
+  if (/as soon as possible|asap|urgently|this month/i.test(leadText))
+    facts.push("Timeline: ASAP");
+  else if (/3.*6 months|three.*six/i.test(leadText)) facts.push("Timeline: 3–6 months");
+  else if (/6.*12 months|six.*twelve/i.test(leadText)) facts.push("Timeline: 6–12 months");
+
+  // Location preference
+  const loc = leadText.match(
+    /\b(lekki|ajah|ibeju|epe|ikorodu|mainland|island|victoria island|abuja|ph|port harcourt|ibadan|enugu|calabar|kano)\b/i,
+  );
+  if (loc) facts.push(`Location preference: ${loc[0]}`);
+
+  // Objections raised (so AI doesn't ignore them)
+  const objections: string[] = [];
+  if (/expensive|too (much|high)|can't afford|overpriced/i.test(leadText)) objections.push("price");
+  if (/scam|fraud|fake|trust|burned|cheated/i.test(leadText)) objections.push("trust/fraud concern");
+  if (/title|c of o|governor.?s consent|survey/i.test(leadText)) objections.push("title verification");
+  if (/partner|spouse|wife|husband|family.*decide/i.test(leadText)) objections.push("partner approval");
+  if (/think.*about|not ready|later|next year|busy/i.test(leadText)) objections.push("not ready yet");
+  if (objections.length) facts.push(`Objections already raised: ${objections.join(", ")}`);
+
+  if (!facts.length) return "";
+  return `WHAT WE ALREADY KNOW ABOUT THIS LEAD:\n${facts.map((f) => `• ${f}`).join("\n")}\n⚠ Do NOT ask for any of the above again. Pick up the conversation from here.`;
+}
+
+// Rule-based signal scoring — updates lead intent_score and stage from message content.
+function scoreLeadFromMessage(
+  text: string,
+  currentScore: number,
+  currentStage: string,
+): { intentScore: number; stage: string } {
+  const t = text.toLowerCase();
+  let score = currentScore;
+  let stage = currentStage;
+
+  // Strong buying signals
+  if (/\b(book|reserve|deposit|proceed|let'?s do it|i want|how do i|ready|confirm|go ahead|deal)\b/i.test(t)) {
+    score = Math.max(score, 82);
+  }
+  if (/\bbook a visit\b|visit_yes/i.test(t)) {
+    score = 92;
+  }
+  // Budget provided → shows serious intent
+  if (/₦|naira|\d+m\b|million|budget/i.test(t) && score < 68) {
+    score = Math.min(score + 12, 68);
+  }
+  // ASAP timeline → high urgency
+  if (/\b(asap|as soon|immediately|urgent|this week|this month)\b/i.test(t)) {
+    score = Math.min(score + 16, 88);
+  }
+  // Positive engagement
+  if (/\b(interested|sounds good|i like|tell me more|more info|nice|great|perfect)\b/i.test(t)) {
+    score = Math.min(score + 8, 75);
+  }
+  // Cooling / stalling signals
+  if (/\b(think about it|not ready|later|next year|maybe someday|not sure|no money|can't afford|busy)\b/i.test(t)) {
+    score = Math.max(score - 14, 18);
+  }
+  // Fraud / trust objection — lower confidence but keep engaged
+  if (/scam|fraud|fake|burned|cheated/i.test(t)) {
+    score = Math.max(score - 8, 25);
+  }
+
+  // Stage thresholds
+  if (score >= 80) stage = "hot";
+  else if (score <= 25) stage = "cold";
+  else if (stage === "cold" && score > 40) stage = "warm"; // re-engaged
+
+  return { intentScore: score, stage };
+}
+
+// Find first property from inventory whose name appears in the AI reply text.
+function findMentionedProperty(
+  reply: string,
+  properties: { name: string; image_url?: string | null }[],
+): { name: string; image_url?: string | null } | null {
+  for (const p of properties) {
+    if (reply.toLowerCase().includes(p.name.toLowerCase())) return p;
+  }
+  return null;
+}
+
+// Send a property image with a caption.
+async function sendWhatsAppImage(
+  phoneNumberId: string,
+  accessToken: string,
+  to: string,
+  imageUrl: string,
+  caption: string,
+) {
+  const r = await fetch(`https://graph.facebook.com/v21.0/${phoneNumberId}/messages`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to,
+      type: "image",
+      image: { link: imageUrl, caption: caption.slice(0, 1024) },
+    }),
+  });
+  if (!r.ok) console.error("[wa-image]", r.status, await r.text());
+}
+
 // ─── AI ENGINE ──────────────────────────────────────────────────────────────
 
 async function generateAIReply(opts: {
@@ -274,6 +411,7 @@ async function generateAIReply(opts: {
     size_sqm: number | null;
     price: number | null;
     title_type: string;
+    image_url?: string | null;
   }[];
   triggers?: string;
   cta?: string;
@@ -310,9 +448,12 @@ async function generateAIReply(opts: {
     .filter(Boolean)
     .join("\n");
 
+  const extractedContext = extractConversationContext(opts.history);
+
   const sys = [
     PERSONAS[opts.persona] ?? PERSONAS.apex_closer,
     contextBlock,
+    extractedContext,
     inventoryBlock,
     opts.marketTags.length
       ? `MARKET INTELLIGENCE (weave naturally as supporting evidence — never quote verbatim):\n${opts.marketTags.join("\n")}`
@@ -479,7 +620,7 @@ export default async function handler(request: Request): Promise<Response> {
           sbFetch(
             supabaseUrl,
             serviceKey,
-            `/properties?user_id=eq.${integ.user_id}&status=eq.available&select=name,location,size_sqm,price,title_type&limit=10`,
+            `/properties?user_id=eq.${integ.user_id}&status=eq.available&select=name,location,size_sqm,price,title_type,image_url&limit=10`,
           ),
         ]);
         const profile = Array.isArray(profileResult) ? profileResult[0] : null;
@@ -557,9 +698,19 @@ export default async function handler(request: Request): Promise<Response> {
           // 23505 = unique_violation → duplicate message, skip
           if (typeof insResult === "object" && insResult?.code === "23505") continue;
 
+          // ── Score lead from this message and update stage/intent_score ────────
+          const { intentScore, stage: newStage } = scoreLeadFromMessage(
+            text,
+            lead.intent_score ?? 50,
+            lead.stage ?? "warm",
+          );
           await sbFetch(supabaseUrl, serviceKey, `/leads?id=eq.${lead.id}`, {
             method: "PATCH",
-            body: JSON.stringify({ last_touch_at: new Date().toISOString() }),
+            body: JSON.stringify({
+              last_touch_at: new Date().toISOString(),
+              intent_score: intentScore,
+              stage: newStage,
+            }),
           });
 
           if (lead.ai_paused) continue;
@@ -610,10 +761,10 @@ export default async function handler(request: Request): Promise<Response> {
           }
 
           // ── Generate AI reply ─────────────────────────────────────────────────
-          const userModel = profile?.ai_model || "groq/llama-3.3-70b-versatile";
-          const finalModel = userModel.includes("gemini")
-            ? "groq/llama-3.3-70b-versatile"
-            : userModel;
+          // Use profile model as-is — Gemini routes to Gemini, Groq to Groq.
+          // When a valid Gemini key is set, just update GEMINI_API_KEY in Vercel env and change
+          // profile.ai_model to "google/gemini-2.5-flash" — no code change needed.
+          const finalModel = profile?.ai_model || "groq/llama-3.3-70b-versatile";
 
           let rawReply = "";
           try {
@@ -705,6 +856,25 @@ export default async function handler(request: Request): Promise<Response> {
               if (!sent) await sendWhatsApp(integ.phone_number_id, integ.access_token, fromPhone, reply);
             } else {
               await sendWhatsApp(integ.phone_number_id, integ.access_token, fromPhone, reply);
+            }
+
+            // ── Auto-send property image if ARIA mentioned one in Stage 3+ ──────
+            // Only fires when there are enough messages to be in presentation stage
+            // and the AI reply contains a property name from inventory.
+            const leadMsgCount = historyArr.filter((h) => h.role === "lead").length;
+            if (leadMsgCount >= 4 && interactiveType === "none") {
+              const mentionedProp = findMentionedProperty(reply, properties);
+              if (mentionedProp?.image_url) {
+                // Small pause so image arrives after the text, not before
+                await new Promise((r) => setTimeout(r, 800));
+                await sendWhatsAppImage(
+                  integ.phone_number_id,
+                  integ.access_token,
+                  fromPhone,
+                  mentionedProp.image_url,
+                  mentionedProp.name,
+                );
+              }
             }
           }
         }
