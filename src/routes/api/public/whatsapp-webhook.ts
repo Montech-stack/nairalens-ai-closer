@@ -523,6 +523,18 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
                   reply = getHumanFallback(); // never silence the buyer
                 }
 
+                // ── Log AI reply to DB first (before send — so we always have a record) ──
+                const { error: aiLogErr } = await supabaseAdmin.from("conversations").insert({
+                  user_id: integ.user_id,
+                  lead_id: lead.id,
+                  role: "ai",
+                  message_text: reply,
+                  annotation: "↳ AI auto-reply (pending send)",
+                });
+                if (aiLogErr) {
+                  console.error("[wa-log] Failed to insert AI reply:", aiLogErr.message);
+                }
+
                 // ── Send reply via WhatsApp Cloud API ──
                 let sendError: string | null = null;
                 if (integ.access_token && integ.phone_number_id) {
@@ -533,17 +545,6 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
                     console.error("[wa-send] FAILED:", e.message);
                   }
                 }
-
-                // ── Log AI reply to conversations (always, even if send failed) ──
-                await supabaseAdmin.from("conversations").insert({
-                  user_id: integ.user_id,
-                  lead_id: lead.id,
-                  role: "ai",
-                  message_text: reply,
-                  annotation: sendError
-                    ? `↳ AI auto-reply (SEND FAILED: ${sendError.slice(0, 120)})`
-                    : "↳ AI auto-reply (WhatsApp Cloud API)",
-                });
 
                 // ── Update intent score based on conversation signals ──
                 const newIntentScore = calculateIntentScore(conversationHistory, text);
