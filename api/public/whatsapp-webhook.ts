@@ -23,8 +23,12 @@ QUALIFYING SEQUENCE (follow this exact order — check history, skip any already
     Example: "And what type of property are you looking for? [PROPERTY_TYPE_BTNS]"
   Step 6: [PAYMENT_BTNS]      — After property type. Ask payment method.
     Example: "How are you looking to structure the payment? [PAYMENT_BTNS]"
-  Step 7: [TIMELINE_BTNS]     — After payment method. Ask buying timeline.
+    CRITICAL: Once they pick Outright, Installment, or Mortgage — that is the FULL answer.
+    Do NOT ask follow-up questions about deposit size, payment duration, or installment periods.
+    Move immediately to Step 7.
+  Step 7: [TIMELINE_BTNS]     — After payment method. Ask WHEN they want to buy/acquire.
     Example: "Last one — when are you looking to move on this? [TIMELINE_BTNS]"
+    This is about purchase timing, NOT about payment schedule length.
   Step 8: (Stage 3) Present ONE matching property from inventory.
   Step 9: [BOOK_VISIT]        — When lead shows clear interest. Invite to site inspection.
     Example: "I can get you in for a private inspection — viewing slots are kept small. [BOOK_VISIT]"
@@ -1034,6 +1038,12 @@ export default async function handler(request: Request): Promise<Response> {
               reply = reply.replace(marker, "").trim();
               break;
             }
+          }
+
+          // If AI asked a question but forgot to append a marker, force YES_NO_BTNS.
+          // This ensures no question ever reaches the lead without tappable options.
+          if (interactiveType === "none" && reply.includes("?")) {
+            interactiveType = "yes_no_btns";
           }
 
           // Fallback: if reply is somehow empty after stripping
