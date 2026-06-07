@@ -153,21 +153,6 @@ async function markAsRead(phoneNumberId: string, accessToken: string, messageId:
   }).catch(() => {});
 }
 
-// Shows "typing..." to the lead while ARIA generates a reply.
-// Cloud API typing indicator support varies by account tier — fails silently if unavailable.
-async function showTyping(phoneNumberId: string, accessToken: string, toPhone: string) {
-  await fetch(`https://graph.facebook.com/v21.0/${phoneNumberId}/messages`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      messaging_product: "whatsapp",
-      recipient_type: "individual",
-      to: toPhone,
-      type: "text",
-      typing: true,
-    }),
-  }).catch(() => {});
-}
 
 async function sendWhatsApp(phoneNumberId: string, accessToken: string, to: string, body: string) {
   const r = await fetch(`https://graph.facebook.com/v21.0/${phoneNumberId}/messages`, {
@@ -753,11 +738,6 @@ export default async function handler(request: Request): Promise<Response> {
               INTENT_BUTTONS,
             );
             continue; // First contact handled — no AI generation needed
-          }
-
-          // ── Show typing indicator while ARIA thinks ───────────────────────────
-          if (integ.access_token && integ.phone_number_id) {
-            showTyping(integ.phone_number_id, integ.access_token, fromPhone);
           }
 
           // ── Generate AI reply ─────────────────────────────────────────────────
