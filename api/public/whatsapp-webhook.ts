@@ -11,7 +11,7 @@ Append ONE of these at the very END of your message when appropriate. They are i
 Rules: Use each marker AT MOST ONCE per full conversation. Never stack two markers. Write naturally — the tag is removed before the customer sees it.`;
 
 const PERSONAS: Record<string, string> = {
-  apex_closer: `You are ARIA — the AI property advisor for this real estate company. You close deals by earning trust, not by pitching. You were trained on the world's most effective sales methods: SPIN Selling (Neil Rackham), Straight-Line Persuasion (Jordan Belfort), the Sandler Pain Funnel, and Cialdini's six principles of influence.
+  apex_closer: `You are Cynthia — the AI property advisor for this real estate company. You close deals by earning trust, not by pitching. You were trained on the world's most effective sales methods: SPIN Selling (Neil Rackham), Straight-Line Persuasion (Jordan Belfort), the Sandler Pain Funnel, and Cialdini's six principles of influence.
 
 YOUR CHARACTER:
 - Warm, sharp, never desperate. Sound like a brilliant friend who knows the Nigerian property market deeply and genuinely wants this buyer to win.
@@ -77,12 +77,12 @@ ABSOLUTE HARD RULES — never break these:
   6. Never use "Certainly!", "Absolutely!", "Great question!", "Of course!", or any corporate filler.
   7. Never start two consecutive replies with the same first word.
   8. If lead goes off-topic: "Worth discussing — but first, let me make sure I find you the right property."
-  9. If they ask who you are: "I'm ARIA, the property advisor here. My job is to make sure you get the right match — not just any property."
+  9. If they ask who you are: "I'm Cynthia, the property advisor here. My job is to make sure you get the right match — not just any property."
   10. Never break character. You are a skilled human advisor, not a chatbot.
 
 ${INTERACTIVE_MARKER_RULES}`,
 
-  diaspora_whisperer: `You are ARIA — the trusted real estate advisor for Nigerians in the diaspora. You know they've likely been burned before: fraudulent titles, ghost developers, FX volatility, the nightmare of managing a remote purchase. Your entire job is to earn trust first, then guide them to the right decision.
+  diaspora_whisperer: `You are Cynthia — the trusted real estate advisor for Nigerians in the diaspora. You know they've likely been burned before: fraudulent titles, ghost developers, FX volatility, the nightmare of managing a remote purchase. Your entire job is to earn trust first, then guide them to the right decision.
 
 YOUR APPROACH:
   1. Understand their goal and their BIGGEST FEAR before pitching anything.
@@ -98,7 +98,7 @@ HARD RULES: Same as apex_closer. One question at a time. Never invent. Sound lik
 
 ${INTERACTIVE_MARKER_RULES}`,
 
-  hni_concierge: `You are ARIA — the private acquisition advisor for ultra-high-net-worth buyers (₦500M+ transactions). These buyers have seen every sales approach. The moment you pitch, you've lost them.
+  hni_concierge: `You are Cynthia — the private acquisition advisor for ultra-high-net-worth buyers (₦500M+ transactions). These buyers have seen every sales approach. The moment you pitch, you've lost them.
 
 YOUR APPROACH:
   - Peer-to-peer, always. You advise, you don't sell. You curate, you don't list.
@@ -244,7 +244,7 @@ async function sendWhatsAppList(
 // ─── CONVERSATION INTELLIGENCE ──────────────────────────────────────────────
 
 // Extract structured facts from raw conversation history and inject as context.
-// This prevents ARIA from re-asking questions the lead already answered.
+// This prevents Cynthia from re-asking questions the lead already answered.
 function extractConversationContext(history: { role: string; message_text: string }[]): string {
   if (!history.length) return "";
   const leadText = history
@@ -514,7 +514,7 @@ async function generateAIReply(opts: {
 
 // ─── INTERACTIVE MESSAGE TEMPLATES ──────────────────────────────────────────
 
-// These are sent when ARIA appends a [MARKER] to its reply.
+// These are sent when Cynthia appends a [MARKER] to its reply.
 // The marker is stripped before delivery; these structures define the interactive payload.
 
 const INTENT_BUTTONS = [
@@ -716,7 +716,7 @@ export default async function handler(request: Request): Promise<Response> {
 
           if (isFirstContact && integ.access_token && integ.phone_number_id) {
             const companyName = profile?.company_name || integ.display_name || "us";
-            const greeting = `Welcome to ${companyName}! I'm ARIA, your property advisor.\n\nTo find your perfect match, what's your main goal?`;
+            const greeting = `Welcome to ${companyName}! I'm Cynthia, your property advisor.\n\nTo find your perfect match, what's your main goal?`;
 
             await sbFetch(supabaseUrl, serviceKey, `/conversations`, {
               method: "POST",
@@ -737,7 +737,50 @@ export default async function handler(request: Request): Promise<Response> {
               greeting,
               INTENT_BUTTONS,
             );
-            continue; // First contact handled — no AI generation needed
+            continue;
+          }
+
+          // ── AWAITING INTENT: lead texted freely instead of tapping a button ───
+          // Detect: last AI message was the intent-selection greeting, but this
+          // message is plain text (not a button reply) and doesn't name an intent.
+          // Re-send buttons with a gentle redirect instead of letting AI hallucinate.
+          const lastAiMsg = historyArr.filter((h) => h.role === "ai").slice(-1)[0];
+          const lastAiWasIntentPrompt =
+            lastAiMsg &&
+            (lastAiMsg.message_text.includes("what's your main goal") ||
+              lastAiMsg.message_text.includes("main goal"));
+          const msgIsNotIntentReply =
+            msgType !== "interactive" &&
+            !/personal home|investment|land|develop|invest|home|house|property|buy|rent/i.test(text);
+
+          if (
+            lastAiWasIntentPrompt &&
+            msgIsNotIntentReply &&
+            integ.access_token &&
+            integ.phone_number_id
+          ) {
+            const nudge = "No worries! Just tap one of the options below to get started 👇";
+
+            await sbFetch(supabaseUrl, serviceKey, `/conversations`, {
+              method: "POST",
+              headers: { Prefer: "return=minimal" },
+              body: JSON.stringify({
+                user_id: integ.user_id,
+                lead_id: lead.id,
+                role: "ai",
+                message_text: nudge,
+                annotation: "↳ AI auto-reply (WhatsApp Cloud API)",
+              }),
+            });
+
+            await sendWhatsAppButtons(
+              integ.phone_number_id,
+              integ.access_token,
+              fromPhone,
+              nudge,
+              INTENT_BUTTONS,
+            );
+            continue;
           }
 
           // ── Generate AI reply ─────────────────────────────────────────────────
@@ -838,7 +881,7 @@ export default async function handler(request: Request): Promise<Response> {
               await sendWhatsApp(integ.phone_number_id, integ.access_token, fromPhone, reply);
             }
 
-            // ── Auto-send property image if ARIA mentioned one in Stage 3+ ──────
+            // ── Auto-send property image if Cynthia mentioned one in Stage 3+ ──────
             // Only fires when there are enough messages to be in presentation stage
             // and the AI reply contains a property name from inventory.
             const leadMsgCount = historyArr.filter((h) => h.role === "lead").length;
