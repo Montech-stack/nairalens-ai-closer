@@ -3,12 +3,35 @@ export const config = { runtime: "edge" };
 // ─── SALES FRAMEWORK ────────────────────────────────────────────────────────
 
 const INTERACTIVE_MARKER_RULES = `
-## INTERACTIVE MESSAGE SIGNALS
-Append ONE of these at the very END of your message when appropriate. They are invisible to the customer.
-  [BUDGET_LIST] — Append when asking about budget for the FIRST time. Triggers an interactive budget selector.
-  [BOOK_VISIT]  — Append when inviting the lead to book a physical site inspection (Stage 4 only).
-  [TIMELINE_BTNS] — Append when asking about their buying timeline (use ONCE after budget is known).
-Rules: Use each marker AT MOST ONCE per full conversation. Never stack two markers. Write naturally — the tag is removed before the customer sees it.`;
+## INTERACTIVE MESSAGE SIGNALS — FULL QUALIFYING ORDER
+Every qualifying question must end with its marker so the lead taps an answer — never types one.
+Append ONE marker at the END of your message. Markers are stripped before delivery.
+
+QUALIFYING SEQUENCE (follow this exact order — check history, skip any already answered):
+  Step 1: [SEARCH_STATUS_BTNS] — After intent is confirmed. Ask how far along in their search.
+    Example: "Great choice. How far along are you in your search? [SEARCH_STATUS_BTNS]"
+  Step 2: [CHALLENGE_LIST]    — After search status. Surface their main obstacle.
+    Example: "Got it. What's been the main thing holding you back so far? [CHALLENGE_LIST]"
+  Step 3: [BUDGET_LIST]       — After challenge. Ask budget range.
+    Example: "I want to find what genuinely fits — what budget are you working with? [BUDGET_LIST]"
+  Step 4: [LOCATION_LIST]     — After budget. Ask preferred area.
+    Example: "Perfect. Which area are you targeting? [LOCATION_LIST]"
+  Step 5: [PROPERTY_TYPE_BTNS]— After location. Ask property type.
+    Example: "And what type of property are you looking for? [PROPERTY_TYPE_BTNS]"
+  Step 6: [PAYMENT_BTNS]      — After property type. Ask payment method.
+    Example: "How are you looking to structure the payment? [PAYMENT_BTNS]"
+  Step 7: [TIMELINE_BTNS]     — After payment method. Ask buying timeline.
+    Example: "Last one — when are you looking to move on this? [TIMELINE_BTNS]"
+  Step 8: (Stage 3) Present ONE matching property from inventory.
+  Step 9: [BOOK_VISIT]        — When lead shows clear interest. Invite to site inspection.
+    Example: "I can get you in for a private inspection — viewing slots are kept small. [BOOK_VISIT]"
+
+RULES:
+  - Use each marker AT MOST ONCE per conversation. Never repeat.
+  - Never stack two markers in one message.
+  - Skip any step if the lead already volunteered that data in free text.
+  - Always acknowledge their last answer in one sentence before asking the next question.
+  - Write naturally — the marker is invisible to the customer.`;
 
 const PERSONAS: Record<string, string> = {
   apex_closer: `You are Cynthia — the AI property advisor for this real estate company. You close deals by earning trust, not by pitching. You were trained on the world's most effective sales methods: SPIN Selling (Neil Rackham), Straight-Line Persuasion (Jordan Belfort), the Sandler Pain Funnel, and Cialdini's six principles of influence.
@@ -27,15 +50,20 @@ STAGE 1 — FIRST CONTACT (history is empty or lead said "hi/hello/hey"):
   Your first reply happens AFTER they click a button. Their button choice ("Personal Home", "Investment", or "Land/Develop") is Stage 1 data.
   Upon seeing their intent choice: acknowledge it warmly in ONE sentence, then move immediately to Stage 2 with your first SPIN question.
 
-STAGE 2 — QUALIFY (intent known; need situation, pain, budget, timeline):
-  Ask SPIN questions ONE at a time, in natural conversation:
-  S — Situation: understand their context ("Have you been looking for a while, or just starting your search?")
-  P — Problem: surface their real frustration ("What's made it hard to find the right property so far?")
-  I — Implication: deepen the urgency ("If you don't lock something in by [their timeline], what happens?")
-  Budget: When it's time to ask budget, write your message naturally and append [BUDGET_LIST] at the end.
-    Good example: "To point you toward the right opportunity — what budget are you working with? [BUDGET_LIST]"
-  Timeline: After budget is known, append [TIMELINE_BTNS] when asking about timeline.
-    Good example: "And when are you looking to move on this? [TIMELINE_BTNS]"
+STAGE 2 — QUALIFY (intent known; use interactive options for every qualifying question):
+  Every question in this stage ends with a marker — the lead taps, never types.
+  Check conversation history before each step: skip any the lead already answered freely.
+  One sentence acknowledging their last answer → then the next question with its marker.
+
+  Follow the QUALIFYING SEQUENCE from the INTERACTIVE MESSAGE SIGNALS section above.
+  The full structured order is: Search Status → Challenge → Budget → Location → Property Type → Payment → Timeline.
+  Once all 7 are answered (by tap or free text), move immediately to Stage 3.
+
+  SPIN FRAMING (embed naturally into your acknowledgement sentences, don't ask as separate questions):
+  - Situation (from search status): infer how experienced they are and calibrate your language.
+  - Problem (from challenge list): the obstacle they select IS their pain — reference it in Stage 3.
+  - Implication: weave urgency into your Stage 3 property pitch, tied to their specific challenge.
+    Example: if they said "price going up", open Stage 3 with: "Given that prices in this corridor have moved 18% in 6 months, the timing of this conversation is actually perfect..."
 
 STAGE 3 — PRESENT (intent + budget known; match to inventory):
   Present EXACTLY ONE property per message that genuinely matches what they told you.
@@ -92,7 +120,7 @@ YOUR APPROACH:
   5. Close by making inaction feel riskier than action — never use pressure, use facts.
 
 Follow the same 4-stage conversation flow (qualify → match → present → close). Never mention price before understanding their needs and budget.
-Use the same interactive markers for budget and timeline.
+Use ALL interactive markers in the exact qualifying sequence defined in the INTERACTIVE MESSAGE SIGNALS section — leads tap every answer, no typing required. Diaspora leads have extra trust concerns: address title integrity and remote purchase process proactively in your Stage 3 pitch.
 
 HARD RULES: Same as apex_closer. One question at a time. Never invent. Sound like a trusted human, not a script.
 
@@ -108,7 +136,7 @@ YOUR APPROACH:
   - Never negotiate pricing over chat. Your job is to get them to the table.
 
 Use [BOOK_VISIT] only when pivoting to a private site tour or meeting request.
-Skip [BUDGET_LIST] and [TIMELINE_BTNS] — HNI buyers find these reductive.
+Skip ALL qualifying option markers ([SEARCH_STATUS_BTNS], [CHALLENGE_LIST], [BUDGET_LIST], [LOCATION_LIST], [PROPERTY_TYPE_BTNS], [PAYMENT_BTNS], [TIMELINE_BTNS]) — HNI buyers find structured menus reductive and transactional. Qualify exclusively through elegant open-ended conversation.
 
 ${INTERACTIVE_MARKER_RULES}`,
 };
@@ -285,6 +313,28 @@ function extractConversationContext(history: { role: string; message_text: strin
     /\b(lekki|ajah|ibeju|epe|ikorodu|mainland|island|victoria island|abuja|ph|port harcourt|ibadan|enugu|calabar|kano)\b/i,
   );
   if (loc) facts.push(`Location preference: ${loc[0]}`);
+
+  // Property type
+  if (/\bapartment|flat\b/i.test(leadText)) facts.push("Property type: Apartment / Flat");
+  else if (/\bland\b|plot\b/i.test(leadText)) facts.push("Property type: Land / Plot");
+  else if (/\bhouse\b|duplex\b|terrace\b/i.test(leadText)) facts.push("Property type: House / Duplex");
+
+  // Payment method
+  if (/outright|full payment|cash/i.test(leadText)) facts.push("Payment: Outright / Cash");
+  else if (/installment|instalment|spread|plan/i.test(leadText)) facts.push("Payment: Installment Plan");
+  else if (/mortgage|bank loan|bank finance/i.test(leadText)) facts.push("Payment: Mortgage / Bank");
+
+  // Search status
+  if (/just started|new to|first time|beginning/i.test(leadText)) facts.push("Search status: Just started");
+  else if (/ready to decide|ready to buy|ready to move|let'?s proceed/i.test(leadText)) facts.push("Search status: Ready to decide");
+  else if (/been looking|searching for a while|looking for.*months/i.test(leadText)) facts.push("Search status: Been looking a while");
+
+  // Main challenge raised (from list selection or free text)
+  if (/too (high|expensive)|can'?t afford|price.*high/i.test(leadText)) facts.push("Main challenge: Price");
+  else if (/right location|area|where/i.test(leadText) && !loc) facts.push("Main challenge: Finding right location");
+  else if (/scam|fraud|fake|trust|burned|title|c of o/i.test(leadText)) facts.push("Main challenge: Title / trust concerns");
+  else if (/never found|nothing good|no good deal/i.test(leadText)) facts.push("Main challenge: No right deal found");
+  else if (/financing|payment plan|installment/i.test(leadText)) facts.push("Main challenge: Financing");
 
   // Objections raised (so AI doesn't ignore them)
   const objections: string[] = [];
@@ -541,6 +591,42 @@ const TIMELINE_BUTTONS = [
 const BOOK_VISIT_BUTTONS = [
   { id: "visit_yes", title: "Book a visit ✅" },
   { id: "visit_info", title: "More info first" },
+];
+
+const SEARCH_STATUS_BUTTONS = [
+  { id: "search_new", title: "Just started 🔍" },
+  { id: "search_looking", title: "Been looking a while" },
+  { id: "search_ready", title: "Ready to decide ✅" },
+];
+
+const CHALLENGE_ROWS = [
+  { id: "challenge_price", title: "Prices are too high", description: "Budget vs. what's available" },
+  { id: "challenge_location", title: "Right location", description: "Haven't found the right area" },
+  { id: "challenge_title", title: "Title / ownership trust", description: "Worried about title integrity" },
+  { id: "challenge_deal", title: "Never found right deal", description: "Options don't excite me" },
+  { id: "challenge_experience", title: "Bad past experience", description: "Been burned before" },
+  { id: "challenge_financing", title: "Financing / payment", description: "Payment plan or mortgage" },
+];
+
+const LOCATION_ROWS = [
+  { id: "loc_lekki_vi", title: "Lekki / Victoria Island", description: "Premium Lagos corridor" },
+  { id: "loc_ibeju", title: "Ibeju-Lekki", description: "Emerging & high-growth zone" },
+  { id: "loc_mainland", title: "Lagos Mainland", description: "Surulere, Yaba, Ikeja area" },
+  { id: "loc_abuja", title: "Abuja / FCT", description: "Capital & satellite towns" },
+  { id: "loc_ph", title: "Port Harcourt", description: "Garden City area" },
+  { id: "loc_open", title: "Open to best deal", description: "Show me what's available" },
+];
+
+const PROPERTY_TYPE_BUTTONS = [
+  { id: "type_apartment", title: "Apartment / Flat" },
+  { id: "type_land", title: "Land / Plot" },
+  { id: "type_house", title: "House / Duplex" },
+];
+
+const PAYMENT_BUTTONS = [
+  { id: "pay_outright", title: "Outright / Cash" },
+  { id: "pay_installment", title: "Installment Plan" },
+  { id: "pay_mortgage", title: "Mortgage / Bank" },
 ];
 
 // ─── MAIN HANDLER ────────────────────────────────────────────────────────────
@@ -813,18 +899,37 @@ export default async function handler(request: Request): Promise<Response> {
           }
 
           // ── Parse interactive markers from AI reply ───────────────────────────
-          let interactiveType: "none" | "budget_list" | "book_visit" | "timeline_btns" = "none";
+          type InteractiveType =
+            | "none"
+            | "search_status_btns"
+            | "challenge_list"
+            | "budget_list"
+            | "location_list"
+            | "property_type_btns"
+            | "payment_btns"
+            | "timeline_btns"
+            | "book_visit";
+
+          let interactiveType: InteractiveType = "none";
           let reply = rawReply;
 
-          if (reply.includes("[BUDGET_LIST]")) {
-            interactiveType = "budget_list";
-            reply = reply.replace("[BUDGET_LIST]", "").trim();
-          } else if (reply.includes("[BOOK_VISIT]")) {
-            interactiveType = "book_visit";
-            reply = reply.replace("[BOOK_VISIT]", "").trim();
-          } else if (reply.includes("[TIMELINE_BTNS]")) {
-            interactiveType = "timeline_btns";
-            reply = reply.replace("[TIMELINE_BTNS]", "").trim();
+          const markerMap: [string, InteractiveType][] = [
+            ["[SEARCH_STATUS_BTNS]", "search_status_btns"],
+            ["[CHALLENGE_LIST]", "challenge_list"],
+            ["[BUDGET_LIST]", "budget_list"],
+            ["[LOCATION_LIST]", "location_list"],
+            ["[PROPERTY_TYPE_BTNS]", "property_type_btns"],
+            ["[PAYMENT_BTNS]", "payment_btns"],
+            ["[TIMELINE_BTNS]", "timeline_btns"],
+            ["[BOOK_VISIT]", "book_visit"],
+          ];
+
+          for (const [marker, type] of markerMap) {
+            if (reply.includes(marker)) {
+              interactiveType = type;
+              reply = reply.replace(marker, "").trim();
+              break;
+            }
           }
 
           // Fallback: if reply is somehow empty after stripping
@@ -848,37 +953,33 @@ export default async function handler(request: Request): Promise<Response> {
 
           // ── Send via WhatsApp ─────────────────────────────────────────────────
           if (integ.access_token && integ.phone_number_id) {
-            if (interactiveType === "budget_list") {
-              const sent = await sendWhatsAppList(
-                integ.phone_number_id,
-                integ.access_token,
-                fromPhone,
-                reply,
-                "Pick a range",
-                BUDGET_ROWS,
-              );
-              // Fallback to text if interactive send fails
-              if (!sent) await sendWhatsApp(integ.phone_number_id, integ.access_token, fromPhone, reply);
-            } else if (interactiveType === "book_visit") {
-              const sent = await sendWhatsAppButtons(
-                integ.phone_number_id,
-                integ.access_token,
-                fromPhone,
-                reply,
-                BOOK_VISIT_BUTTONS,
-              );
-              if (!sent) await sendWhatsApp(integ.phone_number_id, integ.access_token, fromPhone, reply);
-            } else if (interactiveType === "timeline_btns") {
-              const sent = await sendWhatsAppButtons(
-                integ.phone_number_id,
-                integ.access_token,
-                fromPhone,
-                reply,
-                TIMELINE_BUTTONS,
-              );
-              if (!sent) await sendWhatsApp(integ.phone_number_id, integ.access_token, fromPhone, reply);
+            const pid = integ.phone_number_id;
+            const tok = integ.access_token;
+
+            type InteractiveSend =
+              | { kind: "buttons"; rows: { id: string; title: string }[] }
+              | { kind: "list"; label: string; rows: { id: string; title: string; description?: string }[] };
+
+            const interactiveConfig: Partial<Record<InteractiveType, InteractiveSend>> = {
+              search_status_btns: { kind: "buttons", rows: SEARCH_STATUS_BUTTONS },
+              challenge_list:     { kind: "list",    label: "Pick one", rows: CHALLENGE_ROWS },
+              budget_list:        { kind: "list",    label: "Pick a range", rows: BUDGET_ROWS },
+              location_list:      { kind: "list",    label: "Pick area", rows: LOCATION_ROWS },
+              property_type_btns: { kind: "buttons", rows: PROPERTY_TYPE_BUTTONS },
+              payment_btns:       { kind: "buttons", rows: PAYMENT_BUTTONS },
+              timeline_btns:      { kind: "buttons", rows: TIMELINE_BUTTONS },
+              book_visit:         { kind: "buttons", rows: BOOK_VISIT_BUTTONS },
+            };
+
+            const cfg = interactiveConfig[interactiveType];
+            if (cfg) {
+              const sent =
+                cfg.kind === "buttons"
+                  ? await sendWhatsAppButtons(pid, tok, fromPhone, reply, cfg.rows)
+                  : await sendWhatsAppList(pid, tok, fromPhone, reply, cfg.label, cfg.rows);
+              if (!sent) await sendWhatsApp(pid, tok, fromPhone, reply);
             } else {
-              await sendWhatsApp(integ.phone_number_id, integ.access_token, fromPhone, reply);
+              await sendWhatsApp(pid, tok, fromPhone, reply);
             }
 
             // ── Auto-send property image if Cynthia mentioned one in Stage 3+ ──────
