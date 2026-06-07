@@ -26,11 +26,35 @@ QUALIFYING SEQUENCE (follow this exact order — check history, skip any already
   Step 9: [BOOK_VISIT]        — When lead shows clear interest. Invite to site inspection.
     Example: "I can get you in for a private inspection — viewing slots are kept small. [BOOK_VISIT]"
 
-RULES:
-  - Use each marker AT MOST ONCE per conversation. Never repeat.
+STAGE 3 — PRESENTATION QUESTIONS:
+  [INTEREST_BTNS] — After presenting a property. REQUIRED after every property pitch.
+    Example: "Does this feel like the right direction for you? [INTEREST_BTNS]"
+  [OBJECTION_LIST] — When the lead hesitates or you need to surface what's holding them back.
+    Example: "Totally fair — just so I can help better, what's giving you pause? [OBJECTION_LIST]"
+
+STAGE 4 — CLOSE:
+  [BOOK_VISIT] — When inviting to site inspection (existing).
+
+GENERIC FALLBACK — for any other question:
+  [YES_NO_BTNS] — Use this for ANY question that doesn't fit a specific marker above.
+    This is the catch-all. Every question MUST end with a marker. If none of the above fit, use [YES_NO_BTNS].
+    Examples:
+      "Does that breakdown help? [YES_NO_BTNS]"
+      "Would you like me to send the title documents? [YES_NO_BTNS]"
+      "Is now a good time to continue? [YES_NO_BTNS]"
+
+ABSOLUTE RULE: Every question you ask MUST end with a marker. Never ask a question without one.
+  - Questions that are purely rhetorical or statements (not expecting a yes/no) do not need a marker.
+  - A message that is pure information with no question does not need a marker.
+  - But if you are asking anything — ANYTHING — that expects a reply, append the right marker.
+
+QUALIFYING MARKERS — use AT MOST ONCE each, in this exact order:
+  [SEARCH_STATUS_BTNS] → [CHALLENGE_LIST] → [BUDGET_LIST] → [LOCATION_LIST]
+  → [PROPERTY_TYPE_BTNS] → [PAYMENT_BTNS] → [TIMELINE_BTNS]
+
+OTHER RULES:
   - Never stack two markers in one message.
-  - Skip any step if the lead already volunteered that data in free text.
-  - Always acknowledge their last answer in one sentence before asking the next question.
+  - Skip qualifying markers if the lead already volunteered that data in free text.
   - Write naturally — the marker is invisible to the customer.`;
 
 const PERSONAS: Record<string, string> = {
@@ -69,14 +93,18 @@ STAGE 3 — PRESENT (intent + budget known; match to inventory):
   Present EXACTLY ONE property per message that genuinely matches what they told you.
   Always tie back to their exact words: "Since you said you want to hold long-term and need a clean title, [Property X] is built for exactly that — here's why..."
   Cover: name, location, one standout benefit, price with context (ROI, appreciation, comparable sales).
-  End every property pitch with: "Does this feel close to what you're looking for?"
-  If no inventory matches: "Based on what you've told me, let me pull the exact right options — I'll have something specific confirmed within the hour."
+  End every property pitch with [INTEREST_BTNS] — required, no exceptions.
+    Example: "Does this feel like the right direction for you? [INTEREST_BTNS]"
+  If no inventory matches: state this honestly, then ask if they want to be notified when something matching arrives. [YES_NO_BTNS]
 
 STAGE 4 — CLOSE (lead expressed clear interest in a property):
-  Trial close: "Based on everything you've told me, does this feel like the right direction?"
-  If YES or buying signal detected → invite to site visit: append [BOOK_VISIT] to your message.
+  Trial close always ends with [YES_NO_BTNS].
+    Example: "Based on everything you've told me, does this feel like the right move? [YES_NO_BTNS]"
+  If YES or buying signal detected → invite to site visit with [BOOK_VISIT].
     Example: "I can get you in for a private inspection — viewing slots are kept small so it's always personal. [BOOK_VISIT]"
-  If hesitation → surface the SPECIFIC objection ("Is it the price, the location, or the timing that's giving you pause?"), handle it once, then close again.
+  If hesitation detected → surface the specific objection with [OBJECTION_LIST].
+    Example: "Totally fair. Just so I can help better — what's giving you pause? [OBJECTION_LIST]"
+  After handling an objection, close again with [YES_NO_BTNS] or [BOOK_VISIT].
   Never end a message without a clear next step. Never leave the conversation open-ended.
 
 OBJECTION HANDLING — match the script to the exact objection:
@@ -629,6 +657,27 @@ const PAYMENT_BUTTONS = [
   { id: "pay_mortgage", title: "Mortgage / Bank" },
 ];
 
+const INTEREST_BUTTONS = [
+  { id: "interest_yes", title: "Interested! 🎯" },
+  { id: "interest_no", title: "Not quite right" },
+  { id: "interest_more", title: "Tell me more" },
+];
+
+const OBJECTION_ROWS = [
+  { id: "obj_price", title: "Price is too high", description: "The numbers don't work for me yet" },
+  { id: "obj_location", title: "Not the right location", description: "Area doesn't suit my needs" },
+  { id: "obj_timing", title: "Not the right time", description: "I need more time to decide" },
+  { id: "obj_partner", title: "Need partner input", description: "Have to discuss with spouse/family" },
+  { id: "obj_title", title: "Title concerns", description: "Need to verify ownership first" },
+  { id: "obj_comparing", title: "Still comparing", description: "Looking at other options too" },
+];
+
+const YES_NO_BUTTONS = [
+  { id: "yn_yes", title: "Yes ✅" },
+  { id: "yn_no", title: "No" },
+  { id: "yn_more", title: "Tell me more" },
+];
+
 // ─── MAIN HANDLER ────────────────────────────────────────────────────────────
 
 export default async function handler(request: Request): Promise<Response> {
@@ -908,6 +957,9 @@ export default async function handler(request: Request): Promise<Response> {
             | "property_type_btns"
             | "payment_btns"
             | "timeline_btns"
+            | "interest_btns"
+            | "objection_list"
+            | "yes_no_btns"
             | "book_visit";
 
           let interactiveType: InteractiveType = "none";
@@ -921,6 +973,9 @@ export default async function handler(request: Request): Promise<Response> {
             ["[PROPERTY_TYPE_BTNS]", "property_type_btns"],
             ["[PAYMENT_BTNS]", "payment_btns"],
             ["[TIMELINE_BTNS]", "timeline_btns"],
+            ["[INTEREST_BTNS]", "interest_btns"],
+            ["[OBJECTION_LIST]", "objection_list"],
+            ["[YES_NO_BTNS]", "yes_no_btns"],
             ["[BOOK_VISIT]", "book_visit"],
           ];
 
@@ -962,12 +1017,15 @@ export default async function handler(request: Request): Promise<Response> {
 
             const interactiveConfig: Partial<Record<InteractiveType, InteractiveSend>> = {
               search_status_btns: { kind: "buttons", rows: SEARCH_STATUS_BUTTONS },
-              challenge_list:     { kind: "list",    label: "Pick one", rows: CHALLENGE_ROWS },
+              challenge_list:     { kind: "list",    label: "Pick one",   rows: CHALLENGE_ROWS },
               budget_list:        { kind: "list",    label: "Pick a range", rows: BUDGET_ROWS },
-              location_list:      { kind: "list",    label: "Pick area", rows: LOCATION_ROWS },
+              location_list:      { kind: "list",    label: "Pick area",  rows: LOCATION_ROWS },
               property_type_btns: { kind: "buttons", rows: PROPERTY_TYPE_BUTTONS },
               payment_btns:       { kind: "buttons", rows: PAYMENT_BUTTONS },
               timeline_btns:      { kind: "buttons", rows: TIMELINE_BUTTONS },
+              interest_btns:      { kind: "buttons", rows: INTEREST_BUTTONS },
+              objection_list:     { kind: "list",    label: "What's the concern?", rows: OBJECTION_ROWS },
+              yes_no_btns:        { kind: "buttons", rows: YES_NO_BUTTONS },
               book_visit:         { kind: "buttons", rows: BOOK_VISIT_BUTTONS },
             };
 
