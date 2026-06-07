@@ -984,9 +984,53 @@ export default async function handler(request: Request): Promise<Response> {
             ["[BOOK_VISIT]", "book_visit"],
           ];
 
+          // ── Code-level guard: detect which one-time qualifying markers are already answered ──
+          // This overrides the AI even when it ignores the prompt instruction.
+          const allLeadText = historyArr
+            .filter((h) => h.role === "lead")
+            .map((h) => h.message_text)
+            .join(" ")
+            .toLowerCase();
+
+          const answeredMarkers = new Set<string>();
+
+          if (
+            LOCATION_ROWS.some((r) => allLeadText.includes(r.title.toLowerCase())) ||
+            /\b(lekki|ajah|ibeju|mainland|island|abuja|port harcourt|ph|ibadan|kano|enugu)\b/i.test(allLeadText)
+          ) answeredMarkers.add("[LOCATION_LIST]");
+
+          if (
+            BUDGET_ROWS.some((r) => allLeadText.includes(r.title.toLowerCase())) ||
+            /₦|\bnaira\b|\d+\s*m\b|\bmillion\b/i.test(allLeadText)
+          ) answeredMarkers.add("[BUDGET_LIST]");
+
+          if (
+            TIMELINE_BUTTONS.some((r) => allLeadText.includes(r.title.toLowerCase())) ||
+            /\basap\b|as soon as possible|3.*6 month|6.*12 month/i.test(allLeadText)
+          ) answeredMarkers.add("[TIMELINE_BTNS]");
+
+          if (
+            SEARCH_STATUS_BUTTONS.some((r) => allLeadText.includes(r.title.toLowerCase())) ||
+            /just started|been looking|ready to decide|ready to move/i.test(allLeadText)
+          ) answeredMarkers.add("[SEARCH_STATUS_BTNS]");
+
+          if (
+            PROPERTY_TYPE_BUTTONS.some((r) => allLeadText.includes(r.title.toLowerCase())) ||
+            /\bapartment\b|\bflat\b|\bplot\b|\bduplex\b/i.test(allLeadText)
+          ) answeredMarkers.add("[PROPERTY_TYPE_BTNS]");
+
+          if (
+            PAYMENT_BUTTONS.some((r) => allLeadText.includes(r.title.toLowerCase())) ||
+            /\boutright\b|\binstallment\b|\bmortgage\b/i.test(allLeadText)
+          ) answeredMarkers.add("[PAYMENT_BTNS]");
+
+          if (CHALLENGE_ROWS.some((r) => allLeadText.includes(r.title.toLowerCase())))
+            answeredMarkers.add("[CHALLENGE_LIST]");
+
+          // Parse marker — if it's a one-time marker already answered, downgrade to YES_NO_BTNS
           for (const [marker, type] of markerMap) {
             if (reply.includes(marker)) {
-              interactiveType = type;
+              interactiveType = answeredMarkers.has(marker) ? "yes_no_btns" : type;
               reply = reply.replace(marker, "").trim();
               break;
             }
